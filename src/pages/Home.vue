@@ -28,10 +28,11 @@
 
 <script lang="ts" setup>
 import { ipcRenderer } from 'electron';
-import { onMounted, ref } from 'vue';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import stateStroge from '../modules/StateStorage';
 import { imgSrc } from '../modules/Request';
+import { assignWebSocket, closeWebSocket } from '../modules/WebSocket';
 
 const user = ref<any>(null);
 
@@ -43,6 +44,12 @@ onMounted(() => {
 
   const stored = stateStroge.get("user");
   user.value = stored;
+
+  assignWebSocket();
+});
+
+onBeforeUnmount(()=>{
+   closeWebSocket();
 });
 
 </script>

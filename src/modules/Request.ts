@@ -3,6 +3,8 @@ import { ElMessage } from "element-plus";
 
 const baseUrl = "http://localhost:5725";
 
+export const webSocketUrl = `${baseUrl}/ws`;
+
 axios.defaults.baseURL = baseUrl;
 
 export function createCancelToken(){

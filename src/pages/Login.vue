@@ -54,7 +54,7 @@ import stateStroge from '../modules/StateStorage';
 import { Route } from '../modules/Route';
 import { oneSecond } from '../modules/Common';
 import { ElMessage, type FormRules } from 'element-plus';
-import { Message, Lock } from "@element-plus/icons-vue"
+import { Message, Lock } from "@element-plus/icons-vue";
 
 const state = reactive({
     user: {

@@ -87,3 +87,45 @@ export function swapArrayItem(array:any[], index1:number, index2:number) {
 }
 
 export const oneSecond = 1000;
+
+export type HeadMessage = {
+    userId:string,
+    contactId:string,
+    content:string,
+    time:Date,
+    isVerification:boolean
+}
+
+export interface ChatMessage{
+    userId:string,
+    contactId:string,
+    content:string,
+    time:Date,
+    type:Number,
+    fileName?:string,
+    fileSize?:number
+}
+
+export const MessageType = {
+   common:1,
+   image:2,
+   file:3,
+   verification:4
+}
+
+export class PageOption{
+    public current:number;
+    public size:number;
+    public total:number;
+    public data:Array<any>|Record<string,any>;
+    constructor(current:number,size:number,data:Array<any>|Record<string,any>){
+        this.current = current;
+        this.size = size;
+        this.total = 0;
+        this.data = data;
+    }
+    count(){
+        return Math.ceil(this.total/this.size);
+    }
+
+}
