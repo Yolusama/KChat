@@ -25,10 +25,9 @@ public class JwtAuthorizer implements HandlerInterceptor
         this.redis = redis;
         this.jwtService = jwtService;
         NotInterceptedPatterns = new String[]{
-                "/Api/User/Login","/Api/User/CheckCodeLogin/**",
-                "/Api/Common/Heartbeat","/Api/User/Register/**","/Api/User/BindEmail/**",
-                "/Api/User/VerifyToken","/Api/User/GetCheckCode/**","/Api/Admin/Login",
-                "/swagger-ui/**","/swagger-resources/**","/webjars/**","/v2/**"
+                "/Api/User/Login",
+                "/Api/Common/Heartbeat","/Api/User/Register/**",
+                "/Api/User/VerifyToken","/Api/User/GetCheckCode/**"
         };
     }
 

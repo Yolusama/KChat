@@ -15,8 +15,8 @@ public class EmailService {
         host = new EMailSender(config.getHost(),config.getAuthorizationCode());
     }
 
-    public void sendTo(String to,String title,String content)
+    public boolean sendTo(String to,String title,String content)
     {
-        host.sendTo(to, title, content);
+        return host.sendTo(to, title, content);
     }
 }

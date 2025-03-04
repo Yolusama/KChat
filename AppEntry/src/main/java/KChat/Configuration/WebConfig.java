@@ -1,6 +1,7 @@
 package KChat.Configuration;
 
 import KChat.Interceptor.JwtAuthorizer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -13,6 +14,8 @@ import javax.annotation.Resource;
 public class WebConfig extends WebMvcConfigurationSupport {
     @Resource
     private JwtAuthorizer jwtAuthorizer;
+    @Autowired
+    private ResourceConfig resourceConfig;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
@@ -29,5 +32,10 @@ public class WebConfig extends WebMvcConfigurationSupport {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler(resourceConfig.img().getPattern())
+                .addResourceLocations(resourceConfig.img().getLocation());
+
+        registry.addResourceHandler(resourceConfig.file().getPattern())
+                .addResourceLocations(resourceConfig.file().getLocation());
     }
 }

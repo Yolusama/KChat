@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="KChat.DbOption.Mapper.ChatMessageMapper">
+    <select id="getChatMessages" resultType="KChat.Entity.VO.ChatMessageVO">
+       select cm.id,cm.userId,cm.contactId,u.nickname as contactNickname.u.avatar as contactAvatar,
+          cm.content,cm.fileName,cm.fileSize,cm.time from User u
+               join ChatMessage cm on cm.contactId = u.id
+            where cm.userId = #{userId} order by cm.time desc
+    </select>
+    <select id="getUnReadCounts" resultType="java.lang.Integer">
+        select count(1) from ChatMessage cm
+                join HeadMessage hm on cm.userId = hm.userId and cm.contactId = hm.contactId
+        where cm.read = 0 and hm.userId = #{userId}
+             order by hm.time desc
+    </select>
+</mapper>

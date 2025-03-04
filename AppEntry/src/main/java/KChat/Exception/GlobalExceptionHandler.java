@@ -13,6 +13,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ActionResult handleException(Exception ex){
         logger.error(ex.toString());
+        ex.printStackTrace();
         return ActionResult.ServerError;
     }
 }

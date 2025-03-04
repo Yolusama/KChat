@@ -10,6 +10,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class CommonController extends ControllerBase{
     @GetMapping("/Heartbeat")
     public ActionResult Heartbeat(){
-        return ok("至少心态请求...");
+        return ok("这是心跳请求...");
     }
 }

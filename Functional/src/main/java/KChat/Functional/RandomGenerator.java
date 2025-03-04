@@ -13,10 +13,8 @@ public class RandomGenerator {
     private static final Integer UserIdRandomBound = 5;
     private static final Integer UserAccountRandomBound = 9;
     private static final char UserIdPrefix = 'U';
-    private static final char HabitIdPrefix = 'H';
     private static final char VersionIdPrefix = 'V';
     private static final Integer VersionIdLength = 12;
-    private static final Integer HabitIdRandomBound = 5;
 
     public static String generateNumber(int count)
     {
@@ -54,17 +52,18 @@ public class RandomGenerator {
         StringBuilder builder = new StringBuilder();
         Random random = new Random(System.currentTimeMillis());
         builder.append(random.nextInt(UserAccountRandomBound)+1);
-        int count = random.nextInt(2) + Bound;
+        int count = random.nextInt(5) + 7;
         for(int i=0;i<count;i++)
             builder.append(random.nextInt(Bound));
         return builder.toString();
     }
 
-    public static String generateHabitId(){
+    public static String generateGroupId(){
         StringBuilder builder = new StringBuilder();
-        builder.append(HabitIdPrefix);
+        builder.append(Constants.GroupIdPrefix);
         Random random = new Random(System.currentTimeMillis());
-        int bound = random.nextInt(HabitIdRandomBound) + Bound;
+        int bound = random.nextInt(8)
+                ;
         for(int i = 0;i < bound;i++)
             builder.append(random.nextInt(Bound));
         return builder.toString();

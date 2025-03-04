@@ -2,6 +2,7 @@ package KChat.Entity;
 
 
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import org.apache.ibatis.type.JdbcType;
@@ -14,7 +15,8 @@ public class User{
     /**
     * 用户id
     */
-    private String Id;
+    @TableId
+    private String id;
     /**
     * 用户账号
     */
@@ -53,7 +55,7 @@ public class User{
     */
     private Date createTime;
     /**
-    * 上一次登陆时间
+    * 上一次登录时间
     */
     private Date lastLoginTime;
     /**
@@ -75,7 +77,7 @@ public class User{
     /**
     * 登录状态，1：在线，0：离线
     */
-    private Integer loginSatus;
+    private Integer loginStatus;
     /**
     * 添加好友方式：1.需要申请 0.直接可被加为好友
     */

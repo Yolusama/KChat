@@ -18,7 +18,7 @@ public class EMailSender {
       password = authorizationCode;
   }
 
-  public  void sendTo(String to,String subject,String msg){
+  public boolean sendTo(String to,String subject,String msg){
       Properties properties = System.getProperties();
 
       // 连接协议
@@ -52,9 +52,11 @@ public class EMailSender {
           multipart.addBodyPart(messageBodyPart);
           message.setContent(multipart);
           Transport.send(message);
+          return true;
       }
       catch (Exception ex){
           ex.printStackTrace();
+          return false;
       }
   }
 }

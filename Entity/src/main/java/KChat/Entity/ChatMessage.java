@@ -2,10 +2,13 @@ package KChat.Entity;
 
 import KChat.Common.Constants;
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import org.apache.ibatis.type.JdbcType;
+
+import java.util.Date;
 
 @TableName("ChatMessage")
 @Data
@@ -13,7 +16,7 @@ public class ChatMessage {
     /**
     * 聊天信息id,自增
     */
-   @TableId(type = IdType.AUTO)
+    @TableId(type = IdType.AUTO)
     private Long id;
     /**
     * 发送信息的用户id
@@ -39,6 +42,15 @@ public class ChatMessage {
     * 文件大小
     */
     private Long fileSize;
+    /**
+    *是否已读
+     */
+    @TableField(jdbcType = JdbcType.TINYINT)
+    private Boolean read;
+    /**
+    *消息收到/成功发送的时间
+     */
+    private Date time;
 
     public boolean isGroup(){
      return contactId.indexOf(Constants.GroupIdPrefix)>=Constants.None;

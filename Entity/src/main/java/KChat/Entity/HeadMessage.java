@@ -1,9 +1,11 @@
 package KChat.Entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import org.apache.ibatis.type.JdbcType;
 
 import java.util.Date;
 
@@ -22,13 +24,18 @@ public class HeadMessage{
     /**
     * 用户Id
     */
-    private String userid;
+    private String userId;
     /**
-    * 关联的消息Id
-    */
-    private Long messageId;
+     * 消息联系对象id
+     */
+    private String contactId;
     /**
-    * 更新时间
+    * 最后一次聊天的时间
     */
-    private Date updateTime;
+    private Date time;
+    /**
+     * 是否属于验证信息
+     */
+    @TableField(jdbcType = JdbcType.TINYINT)
+    private Boolean isVerification;
 }

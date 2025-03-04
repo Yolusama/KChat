@@ -45,6 +45,7 @@ public class NettyChannelConfig {
             @Override
             public void channelInactive(ChannelHandlerContext ctx) throws Exception {
                 Channel channel = ctx.channel();
+                channel.close();
                 NettyServer.Channels.remove(channel);
                 NettyServer.UserChannels.remove(channel.id());
             }
