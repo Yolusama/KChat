@@ -25,11 +25,15 @@ public class UserApply {
     */
     private String contactId;
     /**
+     * 验证信息
+     */
+    private String info;
+    /**
     * 申请状态，1.验证中，2.忽略，3.拒绝
     */
     private Integer status;
     /**
     * 申请时间
     */
-    private Date createTime;
+    private Date time;
 }

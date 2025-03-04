@@ -4,6 +4,7 @@ import KChat.Common.Constants;
 import KChat.DbOption.Service.IUserService;
 import KChat.DbOption.ServiceImpl.UserService;
 import KChat.Entity.Enum.UserLoginStatus;
+import KChat.Entity.VO.UserInfoVO;
 import KChat.Entity.VO.UserLoginVO;
 import KChat.Model.UserLoginModel;
 import KChat.Model.UserRegModel;
@@ -16,6 +17,8 @@ import KChat.Utils.ObjectUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/Api/User")
@@ -76,5 +79,13 @@ public class UserController extends ControllerBase{
         if(!res)
             return successWithData("身份验证信息错误！", false);
         return successWithData(true);
+    }
+
+    @GetMapping("/GetUserInfo/{userId}")
+    public CompletableFuture<ActionResult<UserInfoVO>> GetUserInfo(@PathVariable String userId,
+                                                                   @RequestParam String identifier){
+        return CompletableFuture.completedFuture(
+                successWithData(userService.getUserInfo(userId,identifier))
+        );
     }
 }

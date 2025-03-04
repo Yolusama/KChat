@@ -2,6 +2,13 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="KChat.DbOption.Mapper.HeadMessageMapper">
+    <insert id="batchInsert">
+        insert into HeadMessage values
+        <foreach collection="messages" item="m" separator="," >
+            (null,#{m.userId},#{m.contactId},#{m.content},#{m.time})
+        </foreach>
+    </insert>
+
     <select id="getHeadMessages" resultType="KChat.Entity.VO.HeadMessageVO">
       select hm.id,hm.content,hm.contractId,hm.contactId,u.nickname as contactNickname,u.avatar as contactAvatar,hm.time,
              hm.isVerification

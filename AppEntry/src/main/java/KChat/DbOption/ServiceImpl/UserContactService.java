@@ -2,6 +2,7 @@ package KChat.DbOption.ServiceImpl;
 
 import KChat.DbOption.Mapper.*;
 import KChat.DbOption.Service.IUserContactService;
+import KChat.Entity.VO.UserInfoVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +24,4 @@ public class UserContactService implements IUserContactService {
         this.labelMapper = labelMapper;
         this.groupNoticeMapper = groupNoticeMapper;
     }
-
-
 }

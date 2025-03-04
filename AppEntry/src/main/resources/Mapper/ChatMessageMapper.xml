@@ -6,7 +6,15 @@
        select cm.id,cm.userId,cm.contactId,u.nickname as contactNickname.u.avatar as contactAvatar,
           cm.content,cm.fileName,cm.fileSize,cm.time from User u
                join ChatMessage cm on cm.contactId = u.id
-            where cm.userId = #{userId} order by cm.time desc
+            <where>
+                <if test = "userId!=contactId">
+                (cm.userId = #{userId} and cm.contactId = contactId) or (cm.userId=#{contactId} and cm.contactId=#{userId})
+                </if>
+                <if test="userId==contactId">
+                    cm.userId = #{userId} and cm.contactId = #{contactId}
+                </if>
+            </where>
+               order by cm.time desc
     </select>
     <select id="getUnReadCounts" resultType="java.lang.Integer">
         select count(1) from ChatMessage cm

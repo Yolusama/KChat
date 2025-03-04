@@ -7,6 +7,7 @@ import KChat.DbOption.Mapper.UserMapper;
 import KChat.DbOption.Service.IUserService;
 import KChat.Entity.Enum.UserLoginStatus;
 import KChat.Entity.User;
+import KChat.Entity.VO.UserInfoVO;
 import KChat.Entity.VO.UserLoginVO;
 import KChat.Functional.RandomGenerator;
 import KChat.Model.UserLoginModel;
@@ -101,5 +102,17 @@ public class UserService implements IUserService {
         if(!redis.has(key))
             return null;
         return redis.get(key).equals(token);
+    }
+
+    @Override
+    public UserInfoVO getUserInfo(String userId, String identifier) {
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getId,identifier).or().eq(User::getEmail,identifier)
+                .or().eq(User::getAccount,identifier);
+        User user = mapper.selectOne(wrapper);
+        UserInfoVO res = new UserInfoVO();
+        ObjectUtil.copy(user,res);
+        res.setIsFriend(mapper.isFriend(userId,user.getId()).equals(Constants.NormalState));
+        return res;
     }
 }

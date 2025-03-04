@@ -1,16 +1,25 @@
 package KChat.DbOption.ServiceImpl;
 
 import KChat.Common.CachingKeys;
+import KChat.Common.Constants;
 import KChat.DbOption.Mapper.ChatMessageMapper;
 import KChat.DbOption.Mapper.HeadMessageMapper;
+import KChat.DbOption.Mapper.UserApplyMapper;
 import KChat.DbOption.Service.IChatMessageService;
+import KChat.Entity.ChatMessage;
+import KChat.Entity.Enum.UserApplyStatus;
 import KChat.Entity.HeadMessage;
+import KChat.Entity.UserApply;
+import KChat.Entity.VO.ChatMessageVO;
 import KChat.Entity.VO.HeadMessageVO;
+import KChat.Entity.VO.PagedData;
 import KChat.Model.ArrayDataModel;
+import KChat.Model.ChatMessageModel;
 import KChat.Model.HeadMessageModel;
-import KChat.Service.RedisCache;
+import KChat.Model.UserApplyModel;
 import KChat.Utils.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,11 +30,13 @@ import java.util.List;
 public class ChatMessageService implements IChatMessageService {
     private final ChatMessageMapper messageMapper;
     private final HeadMessageMapper headMapper;
+    private final UserApplyMapper applyMapper;
 
     @Autowired
-    public ChatMessageService(ChatMessageMapper messageMapper,HeadMessageMapper headMapper){
+    public ChatMessageService(ChatMessageMapper messageMapper,HeadMessageMapper headMapper,UserApplyMapper applyMapper){
         this.messageMapper = messageMapper;
         this.headMapper = headMapper;
+        this.applyMapper = applyMapper;
     }
 
     @Override
@@ -56,20 +67,47 @@ public class ChatMessageService implements IChatMessageService {
     }
 
     @Override
-    public List<HeadMessageVO> getHeadMessages(String userId, RedisCache redis) {
-        ArrayDataModel<HeadMessageVO> model;
-        String key = String.format("Caching_%s_%s",userId, CachingKeys.GetHeadMessages);
-        if (redis.has(key)) {
-            model = (ArrayDataModel<HeadMessageVO>) redis.get(key);
+    public List<HeadMessageVO> getHeadMessages(String userId) {
+        List<HeadMessageVO> messages = headMapper.getHeadMessages(userId);
+        List<Integer> counts = messageMapper.getUnReadCounts(userId);
+        for (int i = 0; i < counts.size(); i++)
+            messages.get(i).setUnReadCount(counts.get(i));
+        return messages;
+    }
+
+    @Override
+    public PagedData<ChatMessageVO> getChatMessages(Integer page, Integer pageSize, String userId, String contactId) {
+        Page<ChatMessageVO> pageRes = Page.of(page,pageSize);
+        var data = messageMapper.getChatMessages(pageRes,userId,contactId);
+        return new PagedData<>(data, pageRes.getTotal());
+    }
+
+    @Override
+    public void makeApply(UserApplyModel model) {
+        LambdaQueryWrapper<UserApply> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserApply::getUserId,model.getUserId()).eq(UserApply::getContactId,model.getContactId());
+        UserApply apply = applyMapper.selectOne(wrapper);
+        if(apply!=null){
+           apply.setInfo(model.getInfo());
+           apply.setTime(Constants.now());
+           applyMapper.updateById(apply);
         }
         else {
-            List<HeadMessageVO> messages = headMapper.getHeadMessages(userId);
-            List<Integer> counts = messageMapper.getUnReadCounts(userId);
-            for (int i = 0; i < counts.size(); i++)
-                messages.get(i).setUnReadCount(counts.get(i));
-            model = new ArrayDataModel<>();
-            model.setData(messages);
+            apply = new UserApply();
+            apply.setUserId(model.getUserId());
+            apply.setContactId(apply.getContactId());
+            apply.setStatus(UserApplyStatus.VERIFY.value());
+            apply.setTime(Constants.now());
+            apply.setInfo(model.getInfo());
+            applyMapper.insert(apply);
         }
-        return model.getData();
+    }
+
+    @Override
+    public Long createMessage(ChatMessageModel model) {
+        ChatMessage message = new ChatMessage();
+        ObjectUtil.copy(model,message);
+        messageMapper.insert(message);
+        return message.getId();
     }
 }

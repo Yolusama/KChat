@@ -10,5 +10,6 @@ import java.util.List;
 
 @Mapper
 public interface HeadMessageMapper extends BaseMapper<HeadMessage> {
+    Integer batchInsert(@Param("messages")List<HeadMessage> messages);
     List<HeadMessageVO> getHeadMessages(@Param("userId")String userId);
 }

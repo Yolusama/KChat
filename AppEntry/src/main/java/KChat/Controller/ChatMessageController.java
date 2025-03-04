@@ -1,10 +1,11 @@
 package KChat.Controller;
 
-import KChat.Annotation.ClearRedisCache;
-import KChat.Common.CachingKeys;
 import KChat.DbOption.Service.IChatMessageService;
 import KChat.DbOption.ServiceImpl.ChatMessageService;
+import KChat.Entity.VO.ChatMessageVO;
 import KChat.Entity.VO.HeadMessageVO;
+import KChat.Entity.VO.PagedData;
+import KChat.Model.ChatMessageModel;
 import KChat.Model.HeadMessageModel;
 import KChat.Result.ActionResult;
 import KChat.Service.RedisCache;
@@ -26,13 +27,11 @@ public class ChatMessageController extends ControllerBase{
     }
 
     @PutMapping("/CreateHeadMessage")
-    @ClearRedisCache(keys = CachingKeys.GetHeadMessages)
     public ActionResult<Long> CreateHeadMessage(@RequestBody HeadMessageModel model){
         return successWithData(chatMessageService.createHeadMessage(model));
     }
 
-    @PutMapping("/FreshHeadMessage")
-    @ClearRedisCache(keys = CachingKeys.GetHeadMessages)
+    @PostMapping("/FreshHeadMessage")
     public ActionResult<Long> FreshHeadMessage(@RequestBody HeadMessageModel model){
         return successWithData(chatMessageService.freshHeadMessage(model));
     }
@@ -40,9 +39,23 @@ public class ChatMessageController extends ControllerBase{
     @GetMapping("/GetHeadMessages/{userId}")
     public CompletableFuture<ActionResult<List<HeadMessageVO>>> GetHeadMessages(@PathVariable String userId){
         return CompletableFuture.completedFuture(successWithData(
-                chatMessageService.getHeadMessages(userId,redis)
+                chatMessageService.getHeadMessages(userId)
         ));
     }
 
+    @GetMapping("/GetMessages/{userId}/{contactId}")
+    public CompletableFuture<ActionResult<PagedData<ChatMessageVO>>> GetMessages(@PathVariable String userId,
+                                                                                 @PathVariable String contactId,
+                                                                                 @RequestParam Integer page,
+                                                                                 @RequestParam Integer pageSize){
+        return CompletableFuture.completedFuture(
+                successWithData(chatMessageService.getChatMessages(page,pageSize,userId,contactId)
+        ));
+    }
+
+    @PutMapping("/CreateMessage")
+    public ActionResult<Long> CreateMessage(@RequestBody ChatMessageModel model){
+        return successWithData(chatMessageService.createMessage(model));
+    }
 
 }
