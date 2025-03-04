@@ -1,12 +1,16 @@
 import axios, { AxiosError,type AxiosRequestConfig,type AxiosResponse } from "axios";
 import { ElMessage } from "element-plus";
 
-const baseUrl = "http://localhost:5235/Api";
+const baseUrl = "http://localhost:5725";
 
 axios.defaults.baseURL = baseUrl;
 
 export function createCancelToken(){
   return axios.CancelToken.source();
+}
+
+export function imgSrc(imgName:string){
+   return `${baseUrl}/img/${imgName}`;
 }
 
 export async function RequestAsync(url:string,type:string,data:any,headers:Record<string,any>){

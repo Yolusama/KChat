@@ -1,17 +1,19 @@
 <script setup lang="ts">
-import { onBeforeMount, onMounted } from 'vue';
+import { onBeforeMount, onMounted} from 'vue';
 import { GetAsync } from './modules/Request';
-import AppHeader from './components/AppHeader.vue';
+import { oneSecond } from './modules/Common';
 
-const option = {
-  timer: 0,
-  exipre:3*60*1000
-};
+type DelayOption = {
+  timer?: NodeJS.Timeout,
+  expire?:number
+}
+
+const option:DelayOption = {expire:oneSecond*60*3};
 
 onMounted(()=>{
    option.timer = setInterval(async()=>{
      await GetAsync("/Api/Common/Heartbeat",{});
-   },option.exipre);
+   },option.expire);
 });
 
 onBeforeMount(()=>{
@@ -20,11 +22,21 @@ onBeforeMount(()=>{
 </script>
 
 <template>
-  <AppHeader></AppHeader>
   <RouterView></RouterView>
 </template>
 
 <style>
+#app {
+  width: 100vw;
+  overflow: hidden;
+  padding: 0;
+  max-width: unset;
+}
+
+body{
+  -webkit-app-region: drag;
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;
