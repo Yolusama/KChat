@@ -15,6 +15,5 @@ public interface IChatMessageService {
     Long freshHeadMessage(HeadMessageModel model);
     List<HeadMessageVO> getHeadMessages(String userId);
     PagedData<ChatMessageVO> getChatMessages(Integer page,Integer pageSize,String userId,String contactId);
-    void makeApply(UserApplyModel model);
     Long createMessage(ChatMessageModel model);
 }

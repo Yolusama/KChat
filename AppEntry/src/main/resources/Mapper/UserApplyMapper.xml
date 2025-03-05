@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="KChat.DbOption.Mapper.UserApplyMapper">
+    <select id="getUserApplies" resultType="KChat.Entity.VO.UserApplyVO">
+        select ua.id as applyId,ua.info as info,ua.time,u.nickname as contactName,u.avatar as contactAvatar,
+                ua.contactId from UserApply ua on ua.contactId = u.id
+                  where ua.userId = #{userId} order by ua.time desc
+    </select>
+</mapper>

@@ -1,27 +1,22 @@
 package KChat.DbOption.ServiceImpl;
 
-import KChat.DbOption.Mapper.*;
+import KChat.DbOption.Mapper.ContactLabelMapper;
+import KChat.DbOption.Mapper.UserContactMapper;
 import KChat.DbOption.Service.IUserContactService;
-import KChat.Entity.VO.UserInfoVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 
 @Service
 public class UserContactService implements IUserContactService {
     private final UserContactMapper contactMapper;
-    private final UserApplyMapper applyMapper;
-    private final UserGroupMapper groupMapper;
     private final ContactLabelMapper labelMapper;
-    private final GroupNoticeMapper groupNoticeMapper;
 
     @Autowired
-    public UserContactService(UserContactMapper contactMapper,UserApplyMapper applyMapper,
-                              UserGroupMapper groupMapper,ContactLabelMapper labelMapper,
-                              GroupNoticeMapper groupNoticeMapper){
+    public UserContactService(UserContactMapper contactMapper,
+                              ContactLabelMapper labelMapper){
         this.contactMapper = contactMapper;
-        this.applyMapper = applyMapper;
-        this.groupMapper = groupMapper;
         this.labelMapper = labelMapper;
-        this.groupNoticeMapper = groupNoticeMapper;
     }
+
 }

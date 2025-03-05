@@ -12,6 +12,7 @@ public final class Constants {
     public static final String CheckCodeTimeOut = "CheckCodeTimeOut";
     public static final String DefaultUserAvatar = "default-user.png";
     public static final String DefaultGroupAvatar = "default-group.png";
+    public static final String WebSocketUserId = "userId";
     public static final int NormalState = 1;
     public static final int AbnormalState = 0;
     public static final int None = 0;
@@ -20,6 +21,7 @@ public final class Constants {
     public static final Duration TokenExpire = Duration.ofDays(30);
     public static final Duration CheckCodeGetInterval = Duration.ofMinutes(1);
     public static final Duration CheckCodeExpire = Duration.ofMinutes(5);
+    public static final Duration UserGroupsGetExpire = Duration.ofHours(1);
 
     public static Date now(){
         return new Date();

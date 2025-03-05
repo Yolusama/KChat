@@ -1,9 +1,12 @@
 package KChat.Controller;
 
 import KChat.Common.Constants;
+import KChat.DbOption.Service.IUserContactService;
 import KChat.DbOption.Service.IUserService;
+import KChat.DbOption.ServiceImpl.UserContactService;
 import KChat.DbOption.ServiceImpl.UserService;
 import KChat.Entity.Enum.UserLoginStatus;
+import KChat.Entity.VO.UserApplyVO;
 import KChat.Entity.VO.UserInfoVO;
 import KChat.Entity.VO.UserLoginVO;
 import KChat.Model.UserLoginModel;
@@ -18,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @RestController
@@ -28,7 +32,7 @@ public class UserController extends ControllerBase{
     private final EmailService emailService;
 
     @Autowired
-    public UserController(UserService userService,JwtService jwtService,EmailService emailService, RedisCache redis){
+    public UserController(UserService userService, JwtService jwtService, EmailService emailService, RedisCache redis){
         this.userService = userService;
         this.redis = redis;
         this.jwtService = jwtService;

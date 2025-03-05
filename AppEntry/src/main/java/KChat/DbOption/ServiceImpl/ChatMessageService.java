@@ -70,7 +70,7 @@ public class ChatMessageService implements IChatMessageService {
     public List<HeadMessageVO> getHeadMessages(String userId) {
         List<HeadMessageVO> messages = headMapper.getHeadMessages(userId);
         List<Integer> counts = messageMapper.getUnReadCounts(userId);
-        for (int i = 0; i < counts.size(); i++)
+        for (int i = 0; i < messages.size(); i++)
             messages.get(i).setUnReadCount(counts.get(i));
         return messages;
     }
@@ -80,27 +80,6 @@ public class ChatMessageService implements IChatMessageService {
         Page<ChatMessageVO> pageRes = Page.of(page,pageSize);
         var data = messageMapper.getChatMessages(pageRes,userId,contactId);
         return new PagedData<>(data, pageRes.getTotal());
-    }
-
-    @Override
-    public void makeApply(UserApplyModel model) {
-        LambdaQueryWrapper<UserApply> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(UserApply::getUserId,model.getUserId()).eq(UserApply::getContactId,model.getContactId());
-        UserApply apply = applyMapper.selectOne(wrapper);
-        if(apply!=null){
-           apply.setInfo(model.getInfo());
-           apply.setTime(Constants.now());
-           applyMapper.updateById(apply);
-        }
-        else {
-            apply = new UserApply();
-            apply.setUserId(model.getUserId());
-            apply.setContactId(apply.getContactId());
-            apply.setStatus(UserApplyStatus.VERIFY.value());
-            apply.setTime(Constants.now());
-            apply.setInfo(model.getInfo());
-            applyMapper.insert(apply);
-        }
     }
 
     @Override
