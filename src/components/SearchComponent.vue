@@ -19,5 +19,9 @@ function onInput(){
 </script>
 
 <style scoped>
-
+  .search-com{
+    position: relative;
+    padding: 4px;
+    -webkit-app-region:no-drag;
+  }
 </style>

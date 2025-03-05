@@ -1,5 +1,7 @@
 import { ElNotification } from "element-plus";
 import { webSocketUrl } from "./Request";
+import stateStroge from "./StateStorage";
+import { delayToRun } from "./Common";
 
 const defaultErrorCallback = () => {
     ElNotification({
@@ -15,7 +17,8 @@ const defaultCloseCallback = () => {
 const defalutOpenCallback = () => {
     console.log("websocket opens...");
 }
-const socket = new WebSocket(webSocketUrl);
+const user = stateStroge.get("user");
+const socket = new WebSocket(`${webSocketUrl}?userId=${user.id}&token=${user.token}`);
 
 export function assignWebSocket(openCallback = defalutOpenCallback, closeCallback = defaultCloseCallback,
     errorCallback = defaultErrorCallback) {
@@ -36,8 +39,14 @@ export function assignMessageCallback(messageCallback: (message: MessageEvent<an
         socket.onmessage = messageCallback;
 }
 
-export function sendMessage(message: any) {
-    socket.send(JSON.stringify(message));
+export function sendMessage(message: any, callback: () => void) {
+    try {
+        socket.send(JSON.stringify(message));
+        delayToRun(callback,50);
+    }
+    catch (e) {
+        console.log(e);
+    }
 }
 
 export function closeWebSocket() {

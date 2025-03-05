@@ -1,36 +1,68 @@
 <template>
     <div id="message">
-       <div class="head-messages">
-          <search-com @search=""></search-com>
-          <div class="head-message" v-for="(message) in state.headMessages" :key="message.id" @click="getMessages(message)">
-          </div>
-       </div>
-       <div class="messages">
-          <div class="message" v-for="message in msgPageOpt.data" :key="message.id">
-               <div class="content" v-html="message.content"></div>
-               <div class="edit">
-                 <el-input v-model="state.content" :rows="4">
-                 </el-input>
-               </div>
-          </div>
-       </div>
+        <div class="head-messages">
+            <search-com @search=""></search-com>
+            <div class="head-message" v-for="(message) in state.headMessages" :key="message.id"
+                @click="getMessages(message)">
+                <img :src="imgSrc(message.contactAvatar)" class="avatar">
+                <div>
+                    <div class="info">
+                        <span class="text-overflow nickname">{{ message.contactName }}</span>
+                        <span class="text-overflow content">{{ message.content }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="empty" v-if="currentHeadMessage==null">
+             <el-image style="width: 100px; height: 100px" src="../assets/messages-empty.jpg" fit="fit"></el-image>
+        </div>
+        <div class="messages" v-else-if="!currentHeadMessage.isVerification">
+            <div class="head">
+            </div>
+            <div class="message" v-for="message in msgPageOpt.data" :key="message.id">
+                <div class="content">
+                    <div class="user-info" v-if="message.userId==state.user.id">
+                        <img :src="imgSrc(state.user.avatar)"class="avatar">
+                        <span class="text-overflow nickname">{{ state.user.nickname }}</span>
+                        <span>{{ new Date(message.time).toLocaleString() }}</span>
+                    </div>
+                    <div class="user-info" v-else>
+                        <img :src="imgSrc(message.avatar)"class="avatar">
+                        <span class="text-overflow nickname">{{ message.nickname }}</span>
+                        <span>{{ new Date(message.time).toLocaleString() }}</span>
+                    </div>
+                    <div class="message-body" v-html="message.content">
+                    </div>
+                </div>
+                <div class="edit">
+                    <el-input v-model="state.content" :rows="4">
+                    </el-input>
+                </div>
+            </div>
+        </div>
+        <div v-else-if="currentHeadMessage.isVerification" class="verifications">
+           
+        </div>
     </div>
 </template>
 
 <script lang="ts" setup>
-import { reactive,onMounted,ref } from 'vue';
-import { assignMessageCallback } from '../modules/WebSocket';
+import { reactive, onMounted, ref } from 'vue';
+import { assignMessageCallback, sendMessage } from '../modules/WebSocket';
 import { copy, MessageType, PageOption, type ChatMessage, type HeadMessage } from '../modules/Common';
 import { CreateMessage, GetHeadMessages, GetMessages } from '../api/ChatMessage';
 import stateStroge from '../modules/StateStorage';
+import { imgSrc } from '../modules/Request';
 
 const state = reactive<any>({
-    headMessages:[],
-    user:{},
-    content:""
+    headMessages: [],
+    user: {},
+    content: ""
 });
 
-onMounted(()=>{
+const currentHeadMessage = ref<any>(null);
+
+onMounted(() => {
     assignMessageCallback(messageHandle);
 
     const user = stateStroge.get("user");
@@ -38,61 +70,86 @@ onMounted(()=>{
     getData();
 });
 
-const msgPageOpt = ref<PageOption>(new PageOption(1,5,[]));
+const msgPageOpt = ref<PageOption>(new PageOption(1, 5, []));
 
-function messageHandle(event:MessageEvent<any>){
-  
+function messageHandle(event: MessageEvent<any>) {
+
 }
 
-function messageSend(headMessage:any){
-    const {contactId,contactIdName,contactAvatar} = headMessage;
-    const message:ChatMessage = {
+function messageSend(headMessage: any) {
+    const { contactId, contactIdName, contactAvatar } = headMessage;
+    const message: ChatMessage = {
         userId: state.user.id,
         contactId: contactId,
         time: new Date(),
         content: state.content,
         type: MessageType.common
     };
-     CreateMessage(message,res=>{
-        const data = res.data;
-        const toAdd:any = {};
-        copy(message,toAdd);
-        toAdd.id = data;
-        toAdd.contactId = contactId;
-        toAdd.contactIdName = contactIdName;
-        toAdd.contactAvatar = contactAvatar;
-        if(msgPageOpt.value.current>=msgPageOpt.value.size){
-            msgPageOpt.value.data.splice(0,1);
-            msgPageOpt.value.data.push(toAdd);
-        }
-        state.content = "";
-     });
+    sendMessage(message, () => {
+        CreateMessage(message, res => {
+            const data = res.data;
+            const toAdd: any = {};
+            copy(message, toAdd);
+            toAdd.id = data;
+            toAdd.contactId = contactId;
+            toAdd.contactIdName = contactIdName;
+            toAdd.contactAvatar = contactAvatar;
+            if (msgPageOpt.value.current >= msgPageOpt.value.size) {
+                msgPageOpt.value.data.splice(0, 1);
+                msgPageOpt.value.data.push(toAdd);
+            }
+            state.content = "";
+        });
+    });
 }
 
-function getData(){
-    GetHeadMessages(state.user.id,res=>{
+function getData() {
+    GetHeadMessages(state.user.id, res => {
         state.headMessages = res.data;
     });
 }
 
-function getMessages(headMessage:any){
+function getMessages(headMessage: any) {
     msgPageOpt.value.current = 1;
     msgPageOpt.value.total = 0;
-    
-    GetMessages(msgPageOpt.value.current,msgPageOpt.value.size,state.user.id,headMessage.contractId,res=>{
+
+    GetMessages(msgPageOpt.value.current, msgPageOpt.value.size, state.user.id, headMessage.contractId, res => {
         msgPageOpt.value.data = res.data.data;
         msgPageOpt.value.total = res.data.total;
     });
+
+    currentHeadMessage.value = headMessage;
 }
-
-
 </script>
 
 <style scoped>
-#message{
-    position: relative; 
+#message {
+    position: relative;
     /*calc函数使用需要空格隔开否则易被识别成字符串 */
     width: calc(100% - 50px);
-    height: 100%;
+    height: 100vh;
+}
+
+#message .head-messages {
+    position: relative;
+    min-width: 10vw;
+    width: 25vw;
+    max-width: 35vw;
+    background-color: aliceblue;
+    height: 100vh;
+    -webkit-app-region: no-drag;
+}
+
+#message .messages .head {
+    height: 30px;
+    width: 100%;
+}
+
+#message .head-message {
+    display: flex;
+    width: 100%;
+    padding: 2px 3px;
+    height: 50px;
+    align-items: center;
 }
 </style>

@@ -3,7 +3,7 @@ import { ElMessage } from "element-plus";
 
 const baseUrl = "http://localhost:5725";
 
-export const webSocketUrl = `${baseUrl}/ws`;
+export const webSocketUrl = "ws://localhost:5726/ws";
 
 axios.defaults.baseURL = baseUrl;
 

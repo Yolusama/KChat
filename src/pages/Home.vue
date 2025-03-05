@@ -1,7 +1,7 @@
 <template>
   <app-header :inLoginCom="false"></app-header>
   <div id="home">
-    <el-menu :default-active="router.currentRoute.value.path" mode="vertical" :router="true" active-text-color="#409eff"
+    <el-menu :default-active="route.path" mode="vertical" :router="true" active-text-color="#409eff"
       background-color="#f8f8f8" class="home-menu">
       <el-menu-item v-if="user != null">
         <img class="avatar no-drag" :src="imgSrc(user.avatar)" />
@@ -15,7 +15,7 @@
         <el-icon class="no-drag">
           <User></User>
         </el-icon>
-      </el-menu-item>
+      </el-menu-item> 
       <el-menu-item>
         <el-icon class="no-drag">
           <Setting />
@@ -29,14 +29,14 @@
 <script lang="ts" setup>
 import { ipcRenderer } from 'electron';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import stateStroge from '../modules/StateStorage';
 import { imgSrc } from '../modules/Request';
 import { assignWebSocket, closeWebSocket } from '../modules/WebSocket';
 
 const user = ref<any>(null);
 
-const router = useRouter();
+const route = useRoute();
 
 onMounted(() => {
   ipcRenderer.send("setSize", 800, 720, true);
@@ -44,12 +44,11 @@ onMounted(() => {
 
   const stored = stateStroge.get("user");
   user.value = stored;
-
   assignWebSocket();
-});
+}); 
 
 onBeforeUnmount(()=>{
-   closeWebSocket();
+  closeWebSocket();
 });
 
 </script>

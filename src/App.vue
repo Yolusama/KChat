@@ -55,4 +55,10 @@ body{
 .no-drag{
   -webkit-app-region:no-drag;
 }
+
+.text-overflow{
+  overflow: hidden;
+  text-wrap: none;
+  text-overflow: ellipsis;
+}
 </style>
