@@ -9,6 +9,7 @@ import KChat.Entity.Enum.UserLoginStatus;
 import KChat.Entity.VO.UserApplyVO;
 import KChat.Entity.VO.UserInfoVO;
 import KChat.Entity.VO.UserLoginVO;
+import KChat.Entity.VO.UserVO;
 import KChat.Model.UserLoginModel;
 import KChat.Model.UserRegModel;
 import KChat.Model.UserTokenModel;
@@ -22,19 +23,23 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/Api/User")
 public class UserController extends ControllerBase{
     private final IUserService userService;
+    private final IUserContactService userContactService;
     private final JwtService jwtService;
     private final EmailService emailService;
 
     @Autowired
-    public UserController(UserService userService, JwtService jwtService, EmailService emailService, RedisCache redis){
+    public UserController(UserService userService, UserContactService userContactService,
+                          JwtService jwtService, EmailService emailService, RedisCache redis){
         this.userService = userService;
         this.redis = redis;
+        this.userContactService = userContactService;
         this.jwtService = jwtService;
         this.emailService = emailService;
     }
@@ -90,6 +95,13 @@ public class UserController extends ControllerBase{
                                                                    @RequestParam String identifier){
         return CompletableFuture.completedFuture(
                 successWithData(userService.getUserInfo(userId,identifier))
+        );
+    }
+
+    @GetMapping("/GetFriends/{userId}")
+    public CompletableFuture<ActionResult<Map<Long,List<UserVO>>>> GetFriends(@PathVariable String userId){
+        return CompletableFuture.completedFuture(
+                successWithData(userContactService.getFriends(userId,redis))
         );
     }
 }

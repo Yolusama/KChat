@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="KChat.DbOption.Mapper.UserContactMapper">
+    <select id="getFriends" resultType="KChat.Entity.VO.UserVO">
+        select u.nickname,u.remark,u.signature,u.account,l.id as labelId,l.name as labelName from User u
+           join UserContact on u.id = uc.contactId
+            join ContactLabel l on l.id = uc.contactId
+        where uc.isGroup = 0 and uc.userId = #{userId} and uc.status not in(3,5)
+    </select>
+</mapper>

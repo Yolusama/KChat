@@ -9,4 +9,5 @@ import java.util.List;
 public interface IUserApplyService {
     List<UserApplyVO> getUserApplies(String userId);
     void makeApply(UserApplyModel model);
+    int setApplyStatus(UserApplyModel model);
 }

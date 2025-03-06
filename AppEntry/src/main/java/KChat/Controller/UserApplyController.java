@@ -1,5 +1,6 @@
 package KChat.Controller;
 
+import KChat.Common.Constants;
 import KChat.DbOption.Service.IUserApplyService;
 import KChat.DbOption.ServiceImpl.UserApplyService;
 import KChat.Entity.VO.UserApplyVO;
@@ -35,4 +36,13 @@ public class UserApplyController extends ControllerBase{
         applyService.makeApply(model);
         return ok("已发出好友申请！");
     }
+
+    @PatchMapping("/SetApplyStatus")
+    public ActionResult SetApplyStatus(@RequestBody UserApplyModel model){
+        int res = applyService.setApplyStatus(model);
+        if(res == Constants.AbnormalState)
+            return fail();
+        return ok("已正确确定当前申请状态！");
+    }
 }
+

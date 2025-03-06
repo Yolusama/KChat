@@ -19,11 +19,13 @@ import KChat.Model.HeadMessageModel;
 import KChat.Model.UserApplyModel;
 import KChat.Utils.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -83,6 +85,7 @@ public class ChatMessageService implements IChatMessageService {
     }
 
     @Override
+    @Transactional
     public Long createMessage(ChatMessageModel model) {
         ChatMessage message = new ChatMessage();
         ObjectUtil.copy(model,message);

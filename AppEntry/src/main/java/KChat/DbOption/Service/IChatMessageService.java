@@ -5,7 +5,6 @@ import KChat.Entity.VO.HeadMessageVO;
 import KChat.Entity.VO.PagedData;
 import KChat.Model.ChatMessageModel;
 import KChat.Model.HeadMessageModel;
-import KChat.Model.UserApplyModel;
 
 import java.util.List;
 

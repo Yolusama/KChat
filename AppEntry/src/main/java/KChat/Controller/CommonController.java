@@ -12,4 +12,5 @@ public class CommonController extends ControllerBase{
     public ActionResult Heartbeat(){
         return ok("这是心跳请求...");
     }
+
 }

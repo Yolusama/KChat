@@ -75,11 +75,12 @@ public class User{
     */
     private String role;
     /**
-    * 登录状态，1：在线，0：离线
+    * 用户是否离线，0：在线，1：离线
     */
-    private Integer loginStatus;
+    @TableField(jdbcType = JdbcType.TINYINT)
+    private Boolean offline;
     /**
-    * 添加好友方式：1.需要申请 0.直接可被加为好友
+    * 添加好友方式：2.需要申请 1.直接可被加为好友
     */
     private Integer acceptMode;
 }

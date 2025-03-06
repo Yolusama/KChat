@@ -27,6 +27,10 @@ public class UserGroup{
     */
     private String ownerId;
     /**
+     * 当前群人数
+     */
+    private Integer currentCount;
+    /**
     * 群规模
     */
     private Integer size;
