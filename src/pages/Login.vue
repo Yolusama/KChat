@@ -52,7 +52,7 @@ import { onMounted, reactive, ref } from 'vue';
 import { GetCheckCode, Login, Register, VerifyToken } from '../api/User';
 import stateStroge from '../modules/StateStorage';
 import { Route } from '../modules/Route';
-import { oneSecond } from '../modules/Common';
+import { defalutLodingColor1, LoadingOperate, oneSecond } from '../modules/Common';
 import { ElMessage, type FormRules } from 'element-plus';
 import { Message, Lock } from "@element-plus/icons-vue";
 
@@ -110,7 +110,7 @@ onMounted(function () {
                 ipcRenderer.send("setSize", 0, 0, false);
             }
             else 
-                Route.switch("#/Home");
+               LoadingOperate(true,"登录中...",defalutLodingColor1,()=>Route.switch("#/Home"),1250);
         }, () => {
             stateStroge.clear();
             ipcRenderer.send("setSize", 0, 0, false);
@@ -122,9 +122,9 @@ onMounted(function () {
 
 function login() {
     Login(state.user.account, state.user.password, res => {
-        const data = res.data;
+        const data = res.data; 
         stateStroge.set("user", data);
-        Route.switch("#/Home");
+        LoadingOperate(true,"登录中...",defalutLodingColor1,()=>Route.switch("#/Home"),2000);
     });
 }
 

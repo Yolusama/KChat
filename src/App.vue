@@ -61,4 +61,14 @@ body{
   text-wrap: none;
   text-overflow: ellipsis;
 }
+
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #0003;
+    border-radius: 10px;
+    transition: all .2sease-in-out;
+}
 </style>

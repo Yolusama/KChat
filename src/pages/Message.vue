@@ -13,21 +13,21 @@
                 </div>
             </div>
         </div>
-        <div class="empty" v-if="currentHeadMessage==null">
-             <el-image style="width: 100px; height: 100px" src="../assets/messages-empty.jpg" fit="fit"></el-image>
+        <div class="empty" v-if="currentHeadMessage == null">
+            <el-image style="width: 100px; height: 100px" src="../assets/messages-empty.jpg" fit="fit"></el-image>
         </div>
         <div class="messages" v-else-if="!currentHeadMessage.isVerification">
             <div class="head">
             </div>
             <div class="message" v-for="message in msgPageOpt.data" :key="message.id">
                 <div class="content">
-                    <div class="user-info" v-if="message.userId==state.user.id">
-                        <img :src="imgSrc(state.user.avatar)"class="avatar">
+                    <div class="user-info" v-if="message.userId == state.user.id">
+                        <img :src="imgSrc(state.user.avatar)" class="avatar">
                         <span class="text-overflow nickname">{{ state.user.nickname }}</span>
                         <span>{{ new Date(message.time).toLocaleString() }}</span>
                     </div>
                     <div class="user-info" v-else>
-                        <img :src="imgSrc(message.avatar)"class="avatar">
+                        <img :src="imgSrc(message.avatar)" class="avatar">
                         <span class="text-overflow nickname">{{ message.nickname }}</span>
                         <span>{{ new Date(message.time).toLocaleString() }}</span>
                     </div>
@@ -41,7 +41,7 @@
             </div>
         </div>
         <div v-else-if="currentHeadMessage.isVerification" class="verifications">
-           
+
         </div>
     </div>
 </template>
@@ -50,12 +50,13 @@
 import { reactive, onMounted, ref } from 'vue';
 import { assignMessageCallback, sendMessage } from '../modules/WebSocket';
 import { copy, MessageType, PageOption, type ChatMessage, type HeadMessage } from '../modules/Common';
-import { CreateMessage, GetHeadMessages, GetMessages } from '../api/ChatMessage';
+import { CreateMessage, FreshHeadMessage, GetHeadMessages, GetMessages } from '../api/ChatMessage';
 import stateStroge from '../modules/StateStorage';
 import { imgSrc } from '../modules/Request';
 
 const state = reactive<any>({
     headMessages: [],
+    verifications: [],
     user: {},
     content: ""
 });
@@ -73,11 +74,43 @@ onMounted(() => {
 const msgPageOpt = ref<PageOption>(new PageOption(1, 5, []));
 
 function messageHandle(event: MessageEvent<any>) {
-
+    const msg = event.data;
+    if (currentHeadMessage.value!=null && currentHeadMessage.value.contactId == msg.contactId) {
+        const { contactName, contactAvatar } = currentHeadMessage.value;
+        msg.contactName = contactName;
+        msg.contactAvatar = contactAvatar;
+        if (msgPageOpt.value.current < msgPageOpt.value.size) {
+            msgPageOpt.value.data.splice(0, 1);
+            msgPageOpt.value.data.push(msg);
+        }
+    }
+    const headMessage:any = {};
+    if(currentHeadMessage.value!=null){
+         copy(currentHeadMessage.value,headMessage);
+         headMessage.content = msg.content;
+         headMessage.time = new Date();
+    }
+    else{
+        headMessage.userId = msg.userId;
+        headMessage.contactId = msg.contactId;
+        headMessage.content = msg.content;
+        headMessage.time = new Date();
+        headMessage.isVerification = false;
+    }
+    FreshHeadMessage(headMessage,(res)=>{
+        const id = res.data;
+        const index:number = state.headMessages.findIndex((h: { id: any; })=>h.id==id);
+        if(index<0){
+            headMessage.id = id;
+            state.headMessages.splice(0,0,headMessage);
+        }
+        else
+            state.headMessages[index] = headMessage;
+    });
 }
 
 function messageSend(headMessage: any) {
-    const { contactId, contactIdName, contactAvatar } = headMessage;
+    const { contactId, contactName, contactAvatar } = headMessage;
     const message: ChatMessage = {
         userId: state.user.id,
         contactId: contactId,
@@ -91,10 +124,9 @@ function messageSend(headMessage: any) {
             const toAdd: any = {};
             copy(message, toAdd);
             toAdd.id = data;
-            toAdd.contactId = contactId;
-            toAdd.contactIdName = contactIdName;
+            toAdd.contactIdName = contactName;
             toAdd.contactAvatar = contactAvatar;
-            if (msgPageOpt.value.current >= msgPageOpt.value.size) {
+            if (msgPageOpt.value.current < msgPageOpt.value.size) {
                 msgPageOpt.value.data.splice(0, 1);
                 msgPageOpt.value.data.push(toAdd);
             }
@@ -120,6 +152,7 @@ function getMessages(headMessage: any) {
 
     currentHeadMessage.value = headMessage;
 }
+
 </script>
 
 <style scoped>

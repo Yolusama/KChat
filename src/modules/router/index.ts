@@ -29,6 +29,11 @@ const contactors:RouteRecordRaw = {
 };
 home.children.push(message,contactors);
 routes.push(home);
+routes.push({
+  path:"/Search",
+  name:"Search",
+  component:()=>import("../../pages/Serach.vue")
+});
 
 const router = createRouter({
   history: createWebHashHistory(),
