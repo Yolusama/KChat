@@ -1,6 +1,7 @@
 package KChat.DbOption.Mapper;
 
 import KChat.Entity.User;
+import KChat.Entity.VO.UserVO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;

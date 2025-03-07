@@ -33,9 +33,4 @@ public class HeadMessage{
     * 最后一次聊天的时间
     */
     private Date time;
-    /**
-     * 是否属于验证信息
-     */
-    @TableField(jdbcType = JdbcType.TINYINT)
-    private Boolean isVerification;
 }

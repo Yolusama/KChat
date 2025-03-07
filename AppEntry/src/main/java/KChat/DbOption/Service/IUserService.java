@@ -4,6 +4,7 @@ import KChat.Common.Pair;
 import KChat.Entity.Enum.UserLoginStatus;
 import KChat.Entity.VO.UserInfoVO;
 import KChat.Entity.VO.UserLoginVO;
+import KChat.Entity.VO.UserVO;
 import KChat.Model.UserLoginModel;
 import KChat.Model.UserRegModel;
 import KChat.Service.EmailService;
@@ -16,4 +17,5 @@ public interface IUserService{
     Boolean getCheckCode(String email, Integer length, EmailService emailService, RedisCache redis);
     Boolean verifyToken(String userId,String token,RedisCache redis);
     UserInfoVO getUserInfo(String userId,String identifier);
+    UserVO searchUser(String userId,String identifier);
 }

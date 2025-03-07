@@ -6,10 +6,10 @@ import KChat.DbOption.Service.IUserService;
 import KChat.DbOption.ServiceImpl.UserContactService;
 import KChat.DbOption.ServiceImpl.UserService;
 import KChat.Entity.Enum.UserLoginStatus;
-import KChat.Entity.VO.UserApplyVO;
 import KChat.Entity.VO.UserInfoVO;
 import KChat.Entity.VO.UserLoginVO;
 import KChat.Entity.VO.UserVO;
+import KChat.Model.UserContactModel;
 import KChat.Model.UserLoginModel;
 import KChat.Model.UserRegModel;
 import KChat.Model.UserTokenModel;
@@ -99,9 +99,22 @@ public class UserController extends ControllerBase{
     }
 
     @GetMapping("/GetFriends/{userId}")
-    public CompletableFuture<ActionResult<Map<Long,List<UserVO>>>> GetFriends(@PathVariable String userId){
+    public CompletableFuture<ActionResult<Map<Long,List<UserInfoVO>>>> GetFriends(@PathVariable String userId){
         return CompletableFuture.completedFuture(
                 successWithData(userContactService.getFriends(userId,redis))
         );
+    }
+
+    @GetMapping("/SearchUser/{userId}")
+    public CompletableFuture<ActionResult<UserVO>> SearchUser(@PathVariable String userId,@RequestParam String identifier){
+        return CompletableFuture.completedFuture(
+                successWithData(userService.searchUser(userId,identifier))
+        );
+    }
+
+    @PutMapping("/MakeFriends")
+    public ActionResult MakeFriends(@RequestBody UserContactModel model){
+        userContactService.makeFriends(model);
+        return ok();
     }
 }

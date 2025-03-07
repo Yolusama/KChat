@@ -12,6 +12,7 @@ public final class Constants {
     public static final String CheckCodeTimeOut = "CheckCodeTimeOut";
     public static final String DefaultUserAvatar = "default-user.png";
     public static final String DefaultGroupAvatar = "default-group.png";
+    public static final String DefaultLabelName = "我的好友";
     public static final String WebSocketUserId = "userId";
     public static final int NormalState = 1;
     public static final int AbnormalState = 0;

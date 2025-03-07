@@ -2,6 +2,7 @@ package KChat.Controller;
 
 import KChat.DbOption.Service.IUserGroupService;
 import KChat.DbOption.ServiceImpl.UserGroupService;
+import KChat.Entity.VO.UserVO;
 import KChat.Model.UserGroupModel;
 import KChat.Result.ActionResult;
 import KChat.Service.FileService;

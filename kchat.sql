@@ -11,7 +11,7 @@
  Target Server Version : 80032
  File Encoding         : 65001
 
- Date: 06/03/2025 23:00:18
+ Date: 07/03/2025 23:02:52
 */
 
 SET NAMES utf8mb4;
@@ -51,7 +51,7 @@ CREATE TABLE `contactlabel`  (
   `createTime` datetime NULL DEFAULT NULL COMMENT '创建时间',
   `updateTime` datetime NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE,
-  INDEX `index_userId`(`userId`) USING BTREE
+  UNIQUE INDEX `index_userId_name`(`userId`, `name`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -181,7 +181,7 @@ CREATE TABLE `usergroup`  (
   `name` varchar(25) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '群名称',
   `avatar` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '群头像',
   `ownerId` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '群主id',
-  `currentCount` int NULL DEFAULT NULL COMMENT '群当前人数',
+  `currentCount` int NULL DEFAULT 0 COMMENT '群当前人数',
   `size` tinyint(1) NULL DEFAULT NULL COMMENT '群规模',
   `acceptMode` tinyint(1) NULL DEFAULT NULL COMMENT '进群接受模式，1.无需申请，直接进入，2.需要申请',
   `createTime` datetime NULL DEFAULT NULL COMMENT '创建时间',

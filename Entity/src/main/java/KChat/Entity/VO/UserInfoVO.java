@@ -14,5 +14,6 @@ public class UserInfoVO {
     private String signature;
     private String area;
     private String areaCode;
+    private Long labelId;
     private Boolean isFriend;
 }

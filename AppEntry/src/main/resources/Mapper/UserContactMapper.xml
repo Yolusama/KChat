@@ -3,7 +3,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="KChat.DbOption.Mapper.UserContactMapper">
-    <select id="getFriends" resultType="KChat.Entity.VO.UserVO">
+    <select id="getFriends" resultType="KChat.Entity.VO.UserInfoVO">
         select u.nickname,u.remark,u.signature,u.account,l.id as labelId,l.name as labelName from User u
            join UserContact on u.id = uc.contactId
             join ContactLabel l on l.id = uc.contactId

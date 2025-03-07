@@ -15,5 +15,4 @@ public class HeadMessageVO {
     private String contactAvatar;
     private Integer unReadCount;
     private Date time;
-    private Boolean isVerification;
 }

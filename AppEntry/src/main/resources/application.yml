@@ -15,6 +15,12 @@ spring:
     url: jdbc:mysql://localhost:3306/kchat?rewriteBatchedStatements=true
     username: root
     password:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
 
 mybatis-plus:
   mapperLocations: classpath:Mapper/*.xml
