@@ -71,4 +71,9 @@ body{
     border-radius: 10px;
     transition: all .2sease-in-out;
 }
+
+.intro{
+  font-size: 13px;
+  color: gray;
+}
 </style>

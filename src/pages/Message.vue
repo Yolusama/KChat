@@ -95,7 +95,6 @@ function messageHandle(event: MessageEvent<any>) {
         headMessage.contactId = msg.contactId;
         headMessage.content = msg.content;
         headMessage.time = new Date();
-        headMessage.isVerification = false;
     }
     FreshHeadMessage(headMessage,(res)=>{
         const id = res.data;

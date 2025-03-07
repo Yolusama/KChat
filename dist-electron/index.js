@@ -25,6 +25,46 @@ function processCorresponse(window) {
     window.setMinimumSize(width, height);
   });
 }
+function subWinCallback(subWin) {
+  electron.ipcMain.on("openSearch", () => {
+    subWin.show();
+  });
+  electron.ipcMain.on("search-minimize", () => {
+    subWin.minimize();
+  });
+  electron.ipcMain.on("search-maximize", () => {
+    subWin.setFullScreen(true);
+  });
+  electron.ipcMain.on("search-close", () => {
+    subWin.hide();
+    subWin.reload();
+    subWin.setSize(0, 0);
+    subWin.center();
+  });
+  electron.ipcMain.on("search-restoreSize", () => {
+    subWin.setFullScreen(false);
+  });
+}
+function createSubWindow() {
+  const win = new electron.BrowserWindow({
+    frame: false,
+    minHeight: 600,
+    minWidth: 600,
+    maxHeight: 1e3,
+    show: false,
+    center: true,
+    modal: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+      webSecurity: false
+    },
+    width: 600,
+    height: 600
+  });
+  subWinCallback(win);
+  return win;
+}
 const createWindow = () => {
   const win = new electron.BrowserWindow({
     webPreferences: {
@@ -45,11 +85,13 @@ const createWindow = () => {
     resizable: false
   });
   processCorresponse(win);
+  const subWin = createSubWindow();
   if (electron.app.isPackaged) {
     win.loadFile(path.join(__dirname, "../index.html"));
   } else {
     let url = "http://localhost:5435";
     win.loadURL(url);
+    subWin.loadURL(`${url}/#/Search`);
   }
 };
 electron.app.whenReady().then(() => {

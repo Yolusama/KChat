@@ -32,7 +32,7 @@ routes.push(home);
 routes.push({
   path:"/Search",
   name:"Search",
-  component:()=>import("../../pages/Serach.vue")
+  component:()=>import("../../pages/SearchPage.vue")
 });
 
 const router = createRouter({

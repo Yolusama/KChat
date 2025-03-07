@@ -36,7 +36,7 @@
                 <el-input v-model="state.checkCode" maxlength="6">
                     <template #append>
                         <el-button :disabled="state.hasGotCode" @click="getCheckCode">{{ state.checkCodeText
-                            }}</el-button>
+                        }}</el-button>
                     </template>
                 </el-input>
             </el-form-item>
@@ -109,8 +109,10 @@ onMounted(function () {
                 stateStroge.clear();
                 ipcRenderer.send("setSize", 0, 0, false);
             }
-            else 
-               LoadingOperate(true,"登录中...",defalutLodingColor1,()=>Route.switch("#/Home"),1250);
+            else {
+                ipcRenderer.send("setSize", 0, 0, false);
+                Route.switch("#/Home");
+            }
         }, () => {
             stateStroge.clear();
             ipcRenderer.send("setSize", 0, 0, false);
@@ -122,9 +124,9 @@ onMounted(function () {
 
 function login() {
     Login(state.user.account, state.user.password, res => {
-        const data = res.data; 
+        const data = res.data;
         stateStroge.set("user", data);
-        LoadingOperate(true,"登录中...",defalutLodingColor1,()=>Route.switch("#/Home"),2000);
+        LoadingOperate(false, "登录中...", defalutLodingColor1, () => Route.switch("#/Home"), 2000);
     });
 }
 

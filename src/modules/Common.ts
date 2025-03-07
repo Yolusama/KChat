@@ -92,8 +92,7 @@ export type HeadMessage = {
     userId:string,
     contactId:string,
     content:string,
-    time:Date,
-    isVerification:boolean
+    time:Date
 }
 
 export interface ChatMessage{

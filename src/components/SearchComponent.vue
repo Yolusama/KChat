@@ -7,7 +7,7 @@
         </el-icon>
         <template #dropdown>
         <el-dropdown-menu>
-          <el-dropdown-item><el-icon :size="15"><Connection /></el-icon>加好友/群聊</el-dropdown-item>
+          <el-dropdown-item @click="openSearch"><el-icon :size="15"><Connection /></el-icon>加好友/群聊</el-dropdown-item>
           <el-dropdown-item><el-icon :size="15"><ChatDotSquare /></el-icon>创建群聊</el-dropdown-item>
         </el-dropdown-menu>
       </template>
@@ -19,6 +19,8 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 import { Search } from "@element-plus/icons-vue";
+import { Route } from '../modules/Route';
+import { ipcRenderer } from 'electron';
 
 const content = ref<string>();
 const emits = defineEmits(["search"]);
@@ -26,6 +28,10 @@ const emits = defineEmits(["search"]);
 function onInput() {
   const query = content.value;
   emits("search", query);
+}
+
+function openSearch(){
+  ipcRenderer.send("openSearch");
 }
 
 </script>

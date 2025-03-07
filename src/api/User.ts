@@ -1,5 +1,5 @@
 import { type Result } from "../modules/Request";
-import { api,requestUrl } from "./Api";
+import { api,authorization,requestUrl } from "./Api";
 
 const userApiPettrn = "/Api/User";
 
@@ -27,4 +27,12 @@ export function VerifyToken(userId:string,token:string,successCallback:(result:R
         userId:userId,
         token:token
     },successCallback,failCallback);
+}
+
+export function SearchUser(userId:string,identifier:string,successCallback:(res:Result)=>void){
+    api.get(userApiUrl(`/SearchUser/${userId}?identifier=${identifier}`),authorization(),successCallback);
+}
+
+export function MakeFriends(contactModel:Record<string,any>,successCallback:(res:Result)=>void){
+    api.put(userApiUrl("/MakeFriends"),authorization(),contactModel,successCallback);
 }
