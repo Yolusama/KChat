@@ -1,31 +1,24 @@
 package KChat.DbOption.ServiceImpl;
 
-import KChat.Common.CachingKeys;
-import KChat.Common.Constants;
 import KChat.DbOption.Mapper.ChatMessageMapper;
 import KChat.DbOption.Mapper.HeadMessageMapper;
 import KChat.DbOption.Mapper.UserApplyMapper;
 import KChat.DbOption.Service.IChatMessageService;
 import KChat.Entity.ChatMessage;
-import KChat.Entity.Enum.UserApplyStatus;
 import KChat.Entity.HeadMessage;
-import KChat.Entity.UserApply;
 import KChat.Entity.VO.ChatMessageVO;
 import KChat.Entity.VO.HeadMessageVO;
 import KChat.Entity.VO.PagedData;
-import KChat.Model.ArrayDataModel;
 import KChat.Model.ChatMessageModel;
 import KChat.Model.HeadMessageModel;
-import KChat.Model.UserApplyModel;
+import KChat.Service.MQMsgProducer;
 import KChat.Utils.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
 import java.util.List;
 
 @Service
@@ -86,10 +79,11 @@ public class ChatMessageService implements IChatMessageService {
 
     @Override
     @Transactional
-    public Long createMessage(ChatMessageModel model) {
+    public Long createMessage(ChatMessageModel model, MQMsgProducer msgProducer) {
         ChatMessage message = new ChatMessage();
         ObjectUtil.copy(model,message);
         messageMapper.insert(message);
+        msgProducer.produceAndSend(message);
         return message.getId();
     }
 }

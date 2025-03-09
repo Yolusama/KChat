@@ -23,6 +23,7 @@ public final class Constants {
     public static final Duration CheckCodeGetInterval = Duration.ofMinutes(1);
     public static final Duration CheckCodeExpire = Duration.ofMinutes(5);
     public static final Duration UserGroupsGetExpire = Duration.ofHours(1);
+    public static final Duration SSETimeOut = UserGroupsGetExpire;
     public static final Duration NormalCachingExpire = Duration.ofMinutes(3);
 
     public static Date now(){

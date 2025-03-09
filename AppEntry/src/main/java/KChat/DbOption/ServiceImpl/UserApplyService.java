@@ -1,5 +1,6 @@
 package KChat.DbOption.ServiceImpl;
 
+import KChat.Common.CachingKeys;
 import KChat.Common.Constants;
 import KChat.DbOption.Mapper.UserApplyMapper;
 import KChat.DbOption.Mapper.UserContactMapper;
@@ -9,7 +10,10 @@ import KChat.Entity.Enum.UserContactStatus;
 import KChat.Entity.UserApply;
 import KChat.Entity.UserContact;
 import KChat.Entity.VO.UserApplyVO;
+import KChat.Model.ArrayDataModel;
 import KChat.Model.UserApplyModel;
+import KChat.Service.MQMsgProducer;
+import KChat.Service.RedisCache;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,16 +34,28 @@ public class UserApplyService implements IUserApplyService {
     }
 
     @Override
-    public List<UserApplyVO> getUserApplies(String userId) {
-        return applyMapper.getUserApplies(userId);
+    public List<UserApplyVO> getUserApplies(String userId, RedisCache redis) {
+        ArrayDataModel<UserApplyVO> model;
+        String key = String.format("%s_%s",userId, CachingKeys.GetUserApplies);
+        if(redis.has(key))
+        {
+            model = (ArrayDataModel<UserApplyVO>) redis.get(key);
+            return model.getData();
+        }
+        var res = applyMapper.getUserApplies(userId);
+        model = new ArrayDataModel<>();
+        model.setData(res);
+        redis.set(key,model,Constants.NormalCachingExpire);
+        return res;
     }
 
     @Override
     @Transactional
-    public void makeApply(UserApplyModel model) {
+    public void makeApply(UserApplyModel model, MQMsgProducer msgProducer) {
         LambdaQueryWrapper<UserApply> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(UserApply::getUserId,model.getUserId()).eq(UserApply::getContactId,model.getContactId());
         UserApply apply = applyMapper.selectOne(wrapper);
+
         if(apply!=null){
             apply.setInfo(model.getInfo());
             apply.setTime(Constants.now());
@@ -48,12 +64,14 @@ public class UserApplyService implements IUserApplyService {
         else {
             apply = new UserApply();
             apply.setUserId(model.getUserId());
-            apply.setContactId(apply.getContactId());
+            apply.setContactId(model.getContactId());
             apply.setStatus(UserApplyStatus.VERIFY.value());
             apply.setTime(Constants.now());
             apply.setInfo(model.getInfo());
             applyMapper.insert(apply);
         }
+
+        msgProducer.produceAndSend(apply);
     }
 
     @Override

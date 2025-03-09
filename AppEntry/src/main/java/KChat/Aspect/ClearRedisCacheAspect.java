@@ -43,7 +43,7 @@ public class ClearRedisCacheAspect {
             String[] keys = annotation.keys();
             for(String key:keys)
             {
-                String toOperate = String.format("Caching_%s_%s",userId,key);
+                String toOperate = String.format("%s_%s",userId,key);
                 if(redis.has(toOperate))
                     redis.remove(toOperate);
             }

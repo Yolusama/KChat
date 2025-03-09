@@ -1,11 +1,14 @@
 package KChat.Controller;
 
+import KChat.Annotation.ClearRedisCache;
+import KChat.Common.CachingKeys;
 import KChat.Common.Constants;
 import KChat.DbOption.Service.IUserContactService;
 import KChat.DbOption.Service.IUserService;
 import KChat.DbOption.ServiceImpl.UserContactService;
 import KChat.DbOption.ServiceImpl.UserService;
 import KChat.Entity.Enum.UserLoginStatus;
+import KChat.Entity.VO.ContactLabelVO;
 import KChat.Entity.VO.UserInfoVO;
 import KChat.Entity.VO.UserLoginVO;
 import KChat.Entity.VO.UserVO;
@@ -22,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -116,5 +120,19 @@ public class UserController extends ControllerBase{
     public ActionResult MakeFriends(@RequestBody UserContactModel model){
         userContactService.makeFriends(model);
         return ok();
+    }
+
+    @GetMapping("/GetUserLabels/{userId}")
+    public CompletableFuture<ActionResult<List<ContactLabelVO>>> GetUserLabels(@PathVariable String userId){
+        return CompletableFuture.completedFuture(
+          successWithData(userContactService.getUserLabels(userId,redis))
+        );
+    }
+
+    @PutMapping("/CreateLabel/{userId}")
+    @ClearRedisCache(keys = CachingKeys.GetUserLabels)
+    public ActionResult<ContactLabelVO> CreateLabel(@PathVariable String userId, @RequestParam String labelName,
+                                                    HttpServletRequest request){
+        return successWithData(userContactService.createLabel(userId,labelName));
     }
 }

@@ -1,6 +1,10 @@
 package KChat.Service;
 
 import KChat.Configuration.RabbitMQConfig;
+import KChat.Entity.ChatMessage;
+import KChat.Entity.UserApply;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,8 +18,20 @@ public class MQMsgProducer {
     @Autowired
     private RabbitMQConfig config;
 
-    // 发送消息
-    public void sendMessage(String message) {
-        template.convertAndSend(config.getExchangeName(),config.getRouteKey(),message);
+    public void produceAndSend(Object obj) {
+        Class<?> type = obj.getClass();
+        if(type.equals(UserApply.class))
+        {
+            UserApply apply = (UserApply)obj;
+            template.convertAndSend(config.getExchangeName(),config.getApplyKey(),
+                    String.format("%s %s",RabbitMQConfig.QueueName1,apply.getContactId()));
+        }
+
+        else if(type.equals(ChatMessage.class)){
+            ChatMessage message = (ChatMessage) obj;
+            template.convertAndSend(config.getExchangeName(),config.getMessageKey(),
+                    String.format("%s %s",RabbitMQConfig.QueueName2,message.getContactId()));
+        }
+
     }
 }

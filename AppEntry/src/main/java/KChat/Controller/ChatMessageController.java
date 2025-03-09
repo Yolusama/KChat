@@ -8,6 +8,7 @@ import KChat.Entity.VO.PagedData;
 import KChat.Model.ChatMessageModel;
 import KChat.Model.HeadMessageModel;
 import KChat.Result.ActionResult;
+import KChat.Service.MQMsgProducer;
 import KChat.Service.RedisCache;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -19,10 +20,12 @@ import java.util.concurrent.CompletableFuture;
 @RequestMapping("/Api/Chat")
 public class ChatMessageController extends ControllerBase{
     private final IChatMessageService chatMessageService;
+    private final MQMsgProducer msgProducer;
 
     @Autowired
-    public ChatMessageController(ChatMessageService chatMessageService, RedisCache redis){
+    public ChatMessageController(ChatMessageService chatMessageService,MQMsgProducer msgProducer,RedisCache redis){
         this.chatMessageService = chatMessageService;
+        this.msgProducer = msgProducer;
         this.redis = redis;
     }
 
@@ -55,6 +58,6 @@ public class ChatMessageController extends ControllerBase{
 
     @PutMapping("/CreateMessage")
     public ActionResult<Long> CreateMessage(@RequestBody ChatMessageModel model){
-        return successWithData(chatMessageService.createMessage(model));
+        return successWithData(chatMessageService.createMessage(model,msgProducer));
     }
 }

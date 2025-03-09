@@ -3,8 +3,10 @@ package KChat.DbOption.ServiceImpl;
 import KChat.Common.CachingKeys;
 import KChat.Common.Constants;
 import KChat.Common.Pair;
+import KChat.DbOption.Mapper.ContactLabelMapper;
 import KChat.DbOption.Mapper.UserMapper;
 import KChat.DbOption.Service.IUserService;
+import KChat.Entity.ContactLabel;
 import KChat.Entity.Enum.UserLoginStatus;
 import KChat.Entity.User;
 import KChat.Entity.VO.UserInfoVO;
@@ -28,10 +30,12 @@ import java.util.Map;
 @Service
 public class UserService implements IUserService {
     private final UserMapper mapper;
+    private final ContactLabelMapper labelMapper;
 
     @Autowired
-    public UserService(UserMapper mapper){
+    public UserService(UserMapper mapper,ContactLabelMapper labelMapper){
         this.mapper = mapper;
+        this.labelMapper = labelMapper;
     }
 
     @Override
@@ -79,6 +83,11 @@ public class UserService implements IUserService {
         mapper.insert(user);
         redis.remove(key);
         redis.remove(String.format("%s_%s", model.getEmail(),CachingKeys.CheckCodeGetInterval));
+        ContactLabel label = new ContactLabel();
+        label.setCreateTime(Constants.now());
+        label.setUserId(user.getId());
+        label.setName(Constants.DefaultLabelName);
+        labelMapper.insert(label);
         return user.getAccount();
     }
 
