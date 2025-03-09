@@ -26,32 +26,29 @@ function processCorresponse(window) {
   });
 }
 function subWinCallback(subWin) {
-  electron.ipcMain.on("openSearch", () => {
-    subWin.show();
-  });
-  electron.ipcMain.on("search-minimize", () => {
-    subWin.minimize();
-  });
-  electron.ipcMain.on("search-maximize", () => {
-    subWin.setFullScreen(true);
-  });
-  electron.ipcMain.on("search-close", () => {
-    subWin.hide();
-    subWin.reload();
-    subWin.setSize(0, 0);
-    subWin.center();
-  });
-  electron.ipcMain.on("search-restoreSize", () => {
-    subWin.setFullScreen(false);
-  });
+  const eventFuncs = {
+    "search-minimize": () => subWin.minimize(),
+    "search-maximize": () => subWin.setFullScreen(true),
+    "search-close": () => {
+      subWin.close();
+      subWin.destroy();
+      for (var eventName2 in eventFuncs)
+        electron.ipcMain.off(eventName2, eventFuncs[eventName2]);
+    },
+    "search-restoreSize": () => {
+      subWin.setFullScreen(false);
+    }
+  };
+  for (var eventName in eventFuncs)
+    electron.ipcMain.on(eventName, eventFuncs[eventName]);
 }
-function createSubWindow() {
+function createSubWindow(parent) {
   const win = new electron.BrowserWindow({
     frame: false,
+    parent,
     minHeight: 600,
     minWidth: 600,
     maxHeight: 1e3,
-    show: false,
     center: true,
     modal: false,
     webPreferences: {
@@ -85,13 +82,18 @@ const createWindow = () => {
     resizable: false
   });
   processCorresponse(win);
-  const subWin = createSubWindow();
+  electron.ipcMain.on("openSearch", () => {
+    const subWin = createSubWindow(win);
+    if (electron.app.isPackaged)
+      subWin.loadURL(`file://${__dirname}/index.htmL/#/Search`);
+    else
+      subWin.loadURL("http://localhost:5435/#/Search");
+  });
   if (electron.app.isPackaged) {
-    win.loadFile(path.join(__dirname, "../index.html"));
+    win.loadURL(`file://${__dirname}/index.html`);
   } else {
     let url = "http://localhost:5435";
     win.loadURL(url);
-    subWin.loadURL(`${url}/#/Search`);
   }
 };
 electron.app.whenReady().then(() => {

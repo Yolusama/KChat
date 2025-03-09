@@ -108,8 +108,7 @@ export interface ChatMessage{
 export const MessageType = {
    common:1,
    image:2,
-   file:3,
-   verification:4
+   file:3
 }
 
 export class PageOption{

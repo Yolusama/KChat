@@ -30,47 +30,41 @@ function processCorresponse(window) {
   });
 }
 
-function subWinCallback(subWin){
-  ipcMain.on("openSearch", () => {
-    subWin.show();
-  });
-
-  ipcMain.on("search-minimize", () => {
-    subWin.minimize();
-  });
-
-  ipcMain.on("search-maximize", () => {
-    subWin.setFullScreen(true);
-  });
-
-  ipcMain.on("search-close", () => {
-    subWin.hide();
-    subWin.reload();
-    subWin.setSize(0,0);
-    subWin.center();
-  });
-
-  ipcMain.on("search-restoreSize", () => {
-    subWin.setFullScreen(false);
-  });
+function subWinCallback(subWin) {
+  const eventFuncs = {
+    "search-minimize": () => subWin.minimize(),
+    "search-maximize": () => subWin.setFullScreen(true),
+    "search-close": () => {
+      subWin.close();
+      subWin.destroy();
+      for(var eventName in eventFuncs)
+        ipcMain.off(eventName,eventFuncs[eventName]);
+    },
+    "search-restoreSize": () => {
+      subWin.setFullScreen(false);
+    }
+  };
+  
+  for(var eventName in eventFuncs)
+    ipcMain.on(eventName,eventFuncs[eventName]);
 }
 
-function createSubWindow() {
+function createSubWindow(parent) {
   const win = new BrowserWindow({
     frame: false,
+    parent:parent,
     minHeight: 600,
     minWidth: 600,
-    maxHeight:1000,
-    show: false,
-    center:true,
-    modal:false,
+    maxHeight: 1000,
+    center: true,
+    modal: false,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      webSecurity:false
+      webSecurity: false
     },
-    width:600,
-    height:600
+    width: 600,
+    height: 600
   });
   subWinCallback(win);
   return win;
@@ -95,15 +89,20 @@ const createWindow = () => {
 
   processCorresponse(win);
 
-  const subWin = createSubWindow();
+  ipcMain.on("openSearch", () => {
+    const subWin = createSubWindow(win);
+    if (app.isPackaged)
+      subWin.loadURL(`file://${__dirname}/index.htmL/#/Search`);
+    else
+      subWin.loadURL("http://localhost:5435/#/Search");
+  });
 
   // 如果打包了，渲染index.html
   if (app.isPackaged) {
-    win.loadFile(path.join(__dirname, "../index.html"));
+    win.loadURL(`file://${__dirname}/index.html`);
   } else {
     let url = "http://localhost:5435"; // 本地启动的vue项目路径
     win.loadURL(url);
-    subWin.loadURL(`${url}/#/Search`);
   }
 };
 

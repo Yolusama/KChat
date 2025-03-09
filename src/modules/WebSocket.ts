@@ -15,13 +15,14 @@ const defaultCloseCallback = () => {
 }
 
 const defalutOpenCallback = () => {
-    console.log("websocket opens...");
+    console.log("WebSocket已打开...");
 }
 const user = stateStroge.get("user");
-const socket = new WebSocket(`${webSocketUrl}?userId=${user.id}&token=${user.token}`);
 
+let _socket:WebSocket;
 export function assignWebSocket(openCallback = defalutOpenCallback, closeCallback = defaultCloseCallback,
     errorCallback = defaultErrorCallback) {
+    const socket = new WebSocket(`${webSocketUrl}?userId=${user.id}&token=${user.token}`);
     socket.onopen = openCallback;
     socket.onmessage = null;
     socket.onclose = () => {
@@ -32,24 +33,20 @@ export function assignWebSocket(openCallback = defalutOpenCallback, closeCallbac
         socket.onclose = null;
     };
     socket.onerror = errorCallback;
+    _socket = socket;
+    return socket;
 }
 
-export function assignMessageCallback(messageCallback: (message: MessageEvent<any>) => void) {
-    if (socket.onmessage == null)
-        socket.onmessage = messageCallback;
+export function assignMessageCallback(messageCallback: ((message: MessageEvent<any>) => void) | null) {
+    _socket.onmessage = messageCallback;
 }
 
 export function sendMessage(message: any, callback: () => void) {
     try {
-        socket.send(JSON.stringify(message));
-        delayToRun(callback,50);
+        _socket.send(JSON.stringify(message));
+        delayToRun(callback, 50);
     }
     catch (e) {
         console.log(e);
     }
-}
-
-export function closeWebSocket() {
-    if (socket.readyState == socket.CONNECTING || socket.readyState == socket.OPEN)
-        socket.close();
 }

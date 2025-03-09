@@ -12,16 +12,19 @@
                 <div style="display:flex;flex-direction: column;width:90%">
                     <span class="name"><span class="intro">昵称&nbsp;</span> {{ state.data.nickname }}</span>
                     <span v-if="state.data.isFriend"><span class="intro">备注&nbsp;</span> {{ state.data.remark }}
-                    <el-icon><Edit></Edit></el-icon>
-                       </span>
-                    <span class="signature text-overflow"><span class="intro">个性签名&nbsp;</span>{{ state.data.signature }}1</span>
+                        <el-icon>
+                            <Edit></Edit>
+                        </el-icon>
+                    </span>
+                    <span class="signature text-overflow"><span class="intro">个性签名&nbsp;</span>{{ state.data.signature
+                        }}1</span>
                     <span style="font-size:14px"><span class="intro">账号&nbsp;</span>{{ state.data.account }}</span>
                     <span style="font-size:14px"><span class="intro">电子邮箱&nbsp;</span>{{ state.data.email }}</span>
                     <span><span class="intro">地区&nbsp;</span>{{ state.data.area }}</span>
                 </div>
             </div>
             <el-button type="primary" size="small" v-if="!state.data.isFriend" @click="toAddFriend">添加为好友</el-button>
-            <el-button size="small" v-else>发送消息</el-button>
+            <el-button size="small" v-if="state.isFriend || state.data.user == state.userId">发送消息</el-button>
         </div>
         <div class="content no-drag" v-if="state.data != null && state.data.id.includes('G')">
             <div>
@@ -34,27 +37,38 @@
             <el-button type="warning" size="small" v-if="!state.data.isGroup">加入</el-button>
             <el-button size="small" v-else>发送消息</el-button>
         </div>
+        <apply-dialog :isGroup="state.data.id.includes('G')" v-if="state.show" ref="apply" :contactId="state.data.id"
+            :name="state.data.id.includes('G') ? state.data.name : state.data.nickname" v-model:labels="state.labels"
+            :avatar="state.data.avatar" @close="state.show = false"></apply-dialog>
     </div>
 </template>
 
 <script lang="ts" setup>
-import { reactive, onMounted } from 'vue';
+import { reactive, onMounted, ref } from 'vue';
 import { imgSrc } from '../modules/Request';
-import { MakeFriends, SearchUser } from '../api/User';
+import { GetUserLabels, MakeFriends, SearchUser } from '../api/User';
 import stateStroge from '../modules/StateStorage';
-import { MakeApply } from '../api/UserApply';
-import { ElMessage, ElNotification } from 'element-plus';
-import { CreateHeadMessage } from '../api/ChatMessage';
+import { ElMessage } from 'element-plus';
+import { nextTick } from 'process';
 
 const state = reactive<any>({
     identifier: "",
     data: null,
-    userId: ""
+    userId: "",
+    labelId: 0,
+    show: false,
+    labels: []
 });
+
+const apply = ref<any>(null);
 
 onMounted(() => {
     const user = stateStroge.get("user");
     state.userId = user.id;
+    GetUserLabels(user.id, (res) => {
+        state.labels = res.data;
+        state.labelId = state.labels[0].id;
+    });
 });
 
 function search() {
@@ -74,30 +88,23 @@ function clearData() {
         state.data = null;
 }
 
-function toAddFriend(){
-    if(state.data.acceptMode==1){
-       MakeFriends({
-        userId:state.userId,
-        constactId:state.constactId,
-        remark:state.data.remark,
-        labelId:state.data.labelId
-       },()=>{
-          ElMessage({
-            message:"已添加为好友...",
-            type:"success"
-          });
-       });
-    }
-    else{
-        MakeApply({
-            userId:state.userId,
-            contactId:state.data.id,
-            info:state.applyInfo
-        },(res)=>{
-            ElNotification({
-              message:res.message,
-              type:"success"
+function toAddFriend() {
+    if (state.data.acceptMode == 2) {
+        MakeFriends({
+            userId: state.userId,
+            contactId: state.constactId,
+            labelId: state.data.labelId
+        }, () => {
+            ElMessage({
+                message: "已添加为好友...",
+                type: "success"
             });
+        });
+    }
+    else {
+        state.show = true;
+        nextTick(() => {
+            apply.value.open();
         });
     }
 }
@@ -148,14 +155,14 @@ function toAddFriend(){
     font-size: 14px;
 }
 
-#search .content .info span{
+#search .content .info span {
     height: 30px;
     line-height: 30px;
     width: 80%;
     text-wrap: nowrap;
 }
 
-#search .name{
+#search .name {
     font-size: 14px;
 }
 </style>

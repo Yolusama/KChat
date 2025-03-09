@@ -47,7 +47,7 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, onMounted, ref } from 'vue';
+import { reactive, onMounted, ref, onBeforeUnmount } from 'vue';
 import { assignMessageCallback, sendMessage } from '../modules/WebSocket';
 import { copy, MessageType, PageOption, type ChatMessage, type HeadMessage } from '../modules/Common';
 import { CreateMessage, FreshHeadMessage, GetHeadMessages, GetMessages } from '../api/ChatMessage';
@@ -64,7 +64,7 @@ const state = reactive<any>({
 const currentHeadMessage = ref<any>(null);
 
 onMounted(() => {
-    assignMessageCallback(messageHandle);
+    assignMessageCallback(messageHandle); 
 
     const user = stateStroge.get("user");
     state.user = user;
@@ -98,7 +98,7 @@ function messageHandle(event: MessageEvent<any>) {
     }
     FreshHeadMessage(headMessage,(res)=>{
         const id = res.data;
-        const index:number = state.headMessages.findIndex((h: { id: any; })=>h.id==id);
+        const index:number = state.headMessages.findIndex((h: any)=>h.id==id);
         if(index<0){
             headMessage.id = id;
             state.headMessages.splice(0,0,headMessage);
@@ -152,6 +152,10 @@ function getMessages(headMessage: any) {
     currentHeadMessage.value = headMessage;
 }
 
+onBeforeUnmount(()=>{
+   assignMessageCallback(null);
+});
+
 </script>
 
 <style scoped>
@@ -173,6 +177,8 @@ function getMessages(headMessage: any) {
 }
 
 #message .messages .head {
+
+    
     height: 30px;
     width: 100%;
 }

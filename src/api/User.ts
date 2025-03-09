@@ -36,3 +36,11 @@ export function SearchUser(userId:string,identifier:string,successCallback:(res:
 export function MakeFriends(contactModel:Record<string,any>,successCallback:(res:Result)=>void){
     api.put(userApiUrl("/MakeFriends"),authorization(),contactModel,successCallback);
 }
+
+export function GetUserLabels(userId:string,successCallback:(res:Result)=>void){
+    api.get(userApiUrl(`/GetUserLabels/${userId}`),authorization(),successCallback);
+}
+
+export function CreateLabel(userId:string,labelName:string,successCallback:(res:Result)=>void){
+    api.put(userApiUrl(`/CreateLabel/${userId}?labelName=${labelName}`),authorization,{},successCallback);
+}

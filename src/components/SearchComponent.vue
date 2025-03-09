@@ -19,7 +19,6 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 import { Search } from "@element-plus/icons-vue";
-import { Route } from '../modules/Route';
 import { ipcRenderer } from 'electron';
 
 const content = ref<string>();

@@ -1,21 +1,25 @@
 <template>
   <app-header :inLoginCom="false"></app-header>
   <div id="home">
-    <el-menu :default-active="route.path" mode="vertical" :router="true" active-text-color="#409eff"
+    <el-menu default-active="/Home/Message" mode="vertical" :router="true" active-text-color="#409eff"
       background-color="#f8f8f8" class="home-menu">
       <el-menu-item v-if="user != null">
         <img class="avatar no-drag" :src="imgSrc(user.avatar)" />
       </el-menu-item>
-      <el-menu-item index="/Home/Message">
-        <el-icon class="no-drag">
-          <ChatLineSquare />
-        </el-icon>
+      <el-menu-item index="/Home/Message" @click="unreadOpt.message=false">
+        <el-badge is-dot :hidden="!unreadOpt.message">
+          <el-icon class="no-drag">
+            <ChatLineSquare />
+          </el-icon>
+        </el-badge>
       </el-menu-item>
-      <el-menu-item index="/Home/Contactors">
-        <el-icon class="no-drag">
-          <User></User>
-        </el-icon>
-      </el-menu-item> 
+      <el-menu-item index="/Home/Contactors" @click="unreadOpt.apply=false">
+        <el-badge is-dot :hidden="!unreadOpt.apply">
+          <el-icon class="no-drag">
+            <User></User>
+          </el-icon>
+        </el-badge>
+      </el-menu-item>
       <el-menu-item>
         <el-icon class="no-drag">
           <Setting />
@@ -29,14 +33,18 @@
 <script lang="ts" setup>
 import { ipcRenderer } from 'electron';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { useRoute } from 'vue-router';
 import stateStroge from '../modules/StateStorage';
 import { imgSrc } from '../modules/Request';
-import { assignWebSocket, closeWebSocket } from '../modules/WebSocket';
+import { assignWebSocket } from '../modules/WebSocket';
+import { assginSSE } from '../modules/SSE';
 
 const user = ref<any>(null);
-
-const route = useRoute();
+const unreadOpt = ref<any>({
+  apply:false,
+  message:false
+});
+const sse = ref<EventSource>();
+const webSocket = ref<WebSocket>();
 
 onMounted(() => {
   ipcRenderer.send("setSize", 800, 720, true);
@@ -44,11 +52,20 @@ onMounted(() => {
 
   const stored = stateStroge.get("user");
   user.value = stored;
-  assignWebSocket();
-}); 
+  webSocket.value = assignWebSocket();
+  sse.value = assginSSE(messageCallback);
+});
 
-onBeforeUnmount(()=>{
-  closeWebSocket();
+
+function messageCallback(event:MessageEvent<any>) {
+     const data = JSON.parse(event.data);
+     unreadOpt.value[data.key] = data["value"];
+     console.log(data);
+}
+
+onBeforeUnmount(() => {
+  sse.value?.close();
+  webSocket.value?.close();
 });
 
 </script>
@@ -72,7 +89,7 @@ onBeforeUnmount(()=>{
   border-radius: 50%;
 }
 
-#home .avatar:hover{
+#home .avatar:hover {
   cursor: pointer;
 }
 </style>
