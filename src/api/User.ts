@@ -44,3 +44,15 @@ export function GetUserLabels(userId:string,successCallback:(res:Result)=>void){
 export function CreateLabel(userId:string,labelName:string,successCallback:(res:Result)=>void){
     api.put(userApiUrl(`/CreateLabel/${userId}?labelName=${labelName}`),authorization,{},successCallback);
 }
+
+export function GetFriends(userId:string,successCallback:(res:Result)=>void){
+    api.get(userApiUrl(`/GetFriends/${userId}`),authorization(),successCallback);
+}
+
+export function IsUserOnline(userId:string,successCallback:(res:Result)=>void){
+    api.get(userApiUrl(`/IsOnline/${userId}`),authorization(),successCallback);
+}
+
+export function GoOffline(userId:string){
+    api.patch(userApiUrl(`/GoOffline/${userId}`),authorization(),{},null);
+}

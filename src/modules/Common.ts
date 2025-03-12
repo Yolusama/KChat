@@ -125,5 +125,12 @@ export class PageOption{
     count(){
         return Math.ceil(this.total/this.size);
     }
+}
 
+export enum UserApplyStatus{
+    Verifying = 1,Accepted = 2,Ignored,Refused
+}
+
+export enum GroupContactStatus{
+    KickOut = 2,Dismissed = 3
 }

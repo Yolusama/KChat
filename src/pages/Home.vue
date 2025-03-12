@@ -7,14 +7,14 @@
         <img class="avatar no-drag" :src="imgSrc(user.avatar)" />
       </el-menu-item>
       <el-menu-item index="/Home/Message" @click="unreadOpt.message=false">
-        <el-badge is-dot :hidden="!unreadOpt.message">
+        <el-badge is-dot :hidden="!unreadOpt.message" :offset="[10,20]">
           <el-icon class="no-drag">
             <ChatLineSquare />
           </el-icon>
         </el-badge>
       </el-menu-item>
       <el-menu-item index="/Home/Contactors" @click="unreadOpt.apply=false">
-        <el-badge is-dot :hidden="!unreadOpt.apply">
+        <el-badge is-dot :hidden="!unreadOpt.apply" :offset="[10,20]">
           <el-icon class="no-drag">
             <User></User>
           </el-icon>
@@ -36,14 +36,15 @@ import { onBeforeUnmount, onMounted, ref } from 'vue';
 import stateStroge from '../modules/StateStorage';
 import { imgSrc } from '../modules/Request';
 import { assignWebSocket } from '../modules/WebSocket';
-import { assginSSE } from '../modules/SSE';
+import  sse  from '../modules/SSE';
+import { Route } from '../modules/Route';
+import { GoOffline } from '../api/User';
 
 const user = ref<any>(null);
 const unreadOpt = ref<any>({
   apply:false,
   message:false
 });
-const sse = ref<EventSource>();
 const webSocket = ref<WebSocket>();
 
 onMounted(() => {
@@ -53,21 +54,22 @@ onMounted(() => {
   const stored = stateStroge.get("user");
   user.value = stored;
   webSocket.value = assignWebSocket();
-  sse.value = assginSSE(messageCallback);
+  sse.addMsgFunc(messageCallback);
+  Route.dive("#/Home/Message");
 });
 
 
 function messageCallback(event:MessageEvent<any>) {
      const data = JSON.parse(event.data);
      unreadOpt.value[data.key] = data["value"];
-     console.log(data);
 }
 
 onBeforeUnmount(() => {
-  sse.value?.close();
+  sse.close();
   webSocket.value?.close();
+  const user = stateStroge.get("user");
+  GoOffline(user.id);
 });
-
 </script>
 
 <style scoped>
@@ -81,6 +83,11 @@ onBeforeUnmount(() => {
 #home .home-menu {
   height: 100%;
   width: 75px;
+}
+
+#home .home-menu .el-menu-item{
+  display: flex;
+  justify-content: center;
 }
 
 #home .avatar {

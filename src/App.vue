@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeMount, onMounted} from 'vue';
+import { onBeforeUnmount, onMounted} from 'vue';
 import { GetAsync } from './modules/Request';
 import { oneSecond } from './modules/Common';
 
@@ -16,9 +16,10 @@ onMounted(()=>{
    },option.expire);
 });
 
-onBeforeMount(()=>{
+onBeforeUnmount(()=>{
    clearInterval(option.timer);
 });
+
 </script>
 
 <template>
@@ -75,5 +76,9 @@ body{
 .intro{
   font-size: 13px;
   color: gray;
+}
+
+.el-image-viewer__canvas,.el-dropdown-menu{
+  -webkit-app-region:no-drag;
 }
 </style>

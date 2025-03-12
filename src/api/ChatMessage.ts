@@ -29,3 +29,7 @@ export function GetMessages(currentPage:number,pageSize:number,userId:string,con
         `page=${currentPage}&pageSize=${pageSize}`
     ),authorization(),successCallback);
 }
+
+export function CreateOfflineMessage(chatMessage:any){
+    api.put(chatApiUrl("/CreateOfflineMessage"),authorization(),chatMessage,null);
+}

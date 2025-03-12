@@ -84,28 +84,12 @@ function messageHandle(event: MessageEvent<any>) {
             msgPageOpt.value.data.push(msg);
         }
     }
-    const headMessage:any = {};
-    if(currentHeadMessage.value!=null){
-         copy(currentHeadMessage.value,headMessage);
-         headMessage.content = msg.content;
-         headMessage.time = new Date();
-    }
-    else{
-        headMessage.userId = msg.userId;
-        headMessage.contactId = msg.contactId;
-        headMessage.content = msg.content;
-        headMessage.time = new Date();
-    }
-    FreshHeadMessage(headMessage,(res)=>{
-        const id = res.data;
-        const index:number = state.headMessages.findIndex((h: any)=>h.id==id);
-        if(index<0){
-            headMessage.id = id;
-            state.headMessages.splice(0,0,headMessage);
-        }
-        else
-            state.headMessages[index] = headMessage;
-    });
+    const toUpdate:any = {};
+    copy(msg,toUpdate);
+    const temp = toUpdate.userId;
+    toUpdate.userId = toUpdate.contactId;
+    toUpdate.contactId = temp;
+    freshHeadMessage(toUpdate);
 }
 
 function messageSend(headMessage: any) {
@@ -130,6 +114,7 @@ function messageSend(headMessage: any) {
                 msgPageOpt.value.data.push(toAdd);
             }
             state.content = "";
+            freshHeadMessage(toAdd);
         });
     });
 }
@@ -150,6 +135,31 @@ function getMessages(headMessage: any) {
     });
 
     currentHeadMessage.value = headMessage;
+}
+
+function freshHeadMessage(msg:any){
+    const headMessage:any = {};
+    if(currentHeadMessage.value!=null){
+         copy(currentHeadMessage.value,headMessage);
+         headMessage.content = msg.content;
+         headMessage.time = new Date();
+    }
+    else{
+        headMessage.userId = msg.userId;
+        headMessage.contactId = msg.contactId;
+        headMessage.content = msg.content;
+        headMessage.time = new Date();
+    }
+    FreshHeadMessage(headMessage,(res)=>{
+        const id = res.data;
+        const index:number = state.headMessages.findIndex((h: any)=>h.id==id);
+        if(index<0){
+            headMessage.id = id;
+            state.headMessages.splice(0,0,headMessage);
+        }
+        else
+            state.headMessages[index] = headMessage;
+    });
 }
 
 onBeforeUnmount(()=>{

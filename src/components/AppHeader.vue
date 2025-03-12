@@ -85,7 +85,7 @@ function close() {
    margin-left: 10px;
 }
 
-#app-header .el-icon:hover {
+#app-header .el-icon:hover,#app-header .image:hover {
    cursor: pointer;
    background-color: rgb(235, 236, 235, .75);
 }
