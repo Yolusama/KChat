@@ -2,13 +2,16 @@ package KChat.DbOption.ServiceImpl;
 
 import KChat.Common.CachingKeys;
 import KChat.Common.Constants;
+import KChat.DbOption.Mapper.GroupContactMapper;
 import KChat.DbOption.Mapper.UserApplyMapper;
 import KChat.DbOption.Mapper.UserContactMapper;
 import KChat.DbOption.Service.IUserApplyService;
 import KChat.Entity.Enum.UserApplyStatus;
 import KChat.Entity.Enum.UserContactStatus;
+import KChat.Entity.GroupContact;
 import KChat.Entity.UserApply;
 import KChat.Entity.UserContact;
+import KChat.Entity.VO.GroupApplyVO;
 import KChat.Entity.VO.UserApplyVO;
 import KChat.Model.ArrayDataModel;
 import KChat.Model.UserApplyModel;
@@ -25,12 +28,15 @@ import java.util.List;
 @Service
 public class UserApplyService implements IUserApplyService {
     private final UserApplyMapper applyMapper;
-    private final UserContactMapper contactMapper;
+    private final UserContactMapper userContactMapper;
+    private final GroupContactMapper groupContactMapper;
 
     @Autowired
-    public UserApplyService(UserApplyMapper applyMapper,UserContactMapper contactMapper){
+    public UserApplyService(UserApplyMapper applyMapper,UserContactMapper userContactMapper,
+                            GroupContactMapper groupContactMapper){
         this.applyMapper = applyMapper;
-        this.contactMapper = contactMapper;
+        this.userContactMapper = userContactMapper;
+        this.groupContactMapper = groupContactMapper;
     }
 
     @Override
@@ -50,6 +56,21 @@ public class UserApplyService implements IUserApplyService {
     }
 
     @Override
+    public List<GroupApplyVO> getGroupApplies(String userId, RedisCache redis) {
+        ArrayDataModel<GroupApplyVO> model;
+        String key = String.format("%s_%s",userId,CachingKeys.GetGroupApplies);
+        if(redis.has(key)){
+            model = (ArrayDataModel<GroupApplyVO>) redis.get(key);
+        }
+        else {
+            model = new ArrayDataModel<>();
+            model.setData(applyMapper.getGroupApplies(userId));
+            redis.set(key, model, Constants.NormalCachingExpire);
+        }
+        return model.getData();
+    }
+
+    @Override
     @Transactional
     public void makeApply(UserApplyModel model, MQMsgProducer msgProducer) {
         LambdaQueryWrapper<UserApply> wrapper = new LambdaQueryWrapper<>();
@@ -65,7 +86,7 @@ public class UserApplyService implements IUserApplyService {
             apply = new UserApply();
             apply.setUserId(model.getUserId());
             apply.setContactId(model.getContactId());
-            apply.setStatus(UserApplyStatus.VERIFY.value());
+            apply.setStatus(UserApplyStatus.VERIFYING.value());
             apply.setTime(Constants.now());
             apply.setInfo(model.getInfo());
             applyMapper.insert(apply);
@@ -76,19 +97,31 @@ public class UserApplyService implements IUserApplyService {
 
     @Override
     @Transactional
-    public int setApplyStatus(UserApplyModel model) {
+    public int setApplyStatus(UserApplyModel model,MQMsgProducer msgProducer) {
         LambdaUpdateWrapper<UserApply> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(UserApply::getUserId,model.getUserId()).eq(UserApply::getContactId,model.getContactId());
-        if(model.getStatus().equals(UserApplyStatus.VERIFY.value())){
-            UserContact contact = new UserContact();
-            contact.setUserId(model.getUserId());
-            contact.setStatus(UserContactStatus.NORMAL.value());
-            contact.setContactId(model.getContactId());
-            contact.setCreateTime(Constants.now());
-            contact.setLabelId(model.getLabelId());
-            contact.setIsGroup(model.getContactId().indexOf(Constants.GroupIdPrefix)>=Constants.None);
-            contactMapper.insert(contact);
-            wrapper.set(UserApply::getStatus,UserApplyStatus.VERIFY.value());
+        if(model.getStatus().equals(UserApplyStatus.ACCEPTED.value())){
+            if(model.getContactId().indexOf(Constants.GroupIdPrefix)<0) {
+                UserContact contact = new UserContact();
+                contact.setUserId(model.getUserId());
+                contact.setStatus(UserContactStatus.NORMAL.value());
+                contact.setContactId(model.getContactId());
+                contact.setCreateTime(Constants.now());
+                contact.setLabelId(model.getLabelId());
+                userContactMapper.insert(contact);
+            }
+            else{
+                GroupContact contact = new GroupContact();
+                contact.setStatus(UserContactStatus.NORMAL.value());
+                contact.setUserId(model.getUserId());
+                contact.setGroupId(model.getContactId());
+                contact.setCreateTime(Constants.now());
+                groupContactMapper.insert(contact);
+            }
+            wrapper.set(UserApply::getStatus,UserApplyStatus.ACCEPTED.value());
+            UserApply apply = new UserApply();
+            apply.setContactId(model.getContactId());
+            msgProducer.produceAndSend(apply);
         }
         else
             wrapper.set(UserApply::getStatus,model.getStatus());

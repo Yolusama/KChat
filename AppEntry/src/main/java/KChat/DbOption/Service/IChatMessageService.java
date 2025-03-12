@@ -16,4 +16,5 @@ public interface IChatMessageService {
     List<HeadMessageVO> getHeadMessages(String userId);
     PagedData<ChatMessageVO> getChatMessages(Integer page,Integer pageSize,String userId,String contactId);
     Long createMessage(ChatMessageModel model,MQMsgProducer msgProducer);
+    void createOfflineMessage(ChatMessageModel model);
 }

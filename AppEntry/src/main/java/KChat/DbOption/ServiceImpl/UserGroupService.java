@@ -2,10 +2,14 @@ package KChat.DbOption.ServiceImpl;
 
 import KChat.Common.CachingKeys;
 import KChat.Common.Constants;
+import KChat.DbOption.Mapper.GroupContactMapper;
 import KChat.DbOption.Mapper.GroupNoticeMapper;
 import KChat.DbOption.Mapper.UserGroupMapper;
 import KChat.DbOption.Service.IUserGroupService;
+import KChat.Entity.Enum.UserContactStatus;
+import KChat.Entity.GroupContact;
 import KChat.Entity.UserGroup;
+import KChat.Entity.VO.GroupVO;
 import KChat.Functional.RandomGenerator;
 import KChat.Model.ArrayDataModel;
 import KChat.Model.UserGroupModel;
@@ -23,23 +27,39 @@ import java.util.List;
 public class UserGroupService implements IUserGroupService {
     private final UserGroupMapper groupMapper;
     private final GroupNoticeMapper noticeMapper;
+    private final GroupContactMapper contactMapper;
 
     @Autowired
-    public UserGroupService(UserGroupMapper groupMapper,GroupNoticeMapper noticeMapper){
+    public UserGroupService(UserGroupMapper groupMapper,GroupNoticeMapper noticeMapper,GroupContactMapper contactMapper){
         this.groupMapper = groupMapper;
         this.noticeMapper = noticeMapper;
+        this.contactMapper = contactMapper;
     }
 
     @Override
-    public List<String> getUserGroups(String userId, RedisCache redis) {
+    public List<String> getUserGroupIds(String userId, RedisCache redis) {
         ArrayDataModel<String> model;
-        String key = String.format("%s_%s",userId, CachingKeys.GetUserGroups);
+        String key = String.format("%s_%s",userId, CachingKeys.GetUserGroupIds);
         if(redis.has(key))
             model = (ArrayDataModel<String>) redis.get(key);
         else{
             model = new ArrayDataModel<>();
-            model.setData(groupMapper.getUserGroups(userId));
+            model.setData(groupMapper.getUserGroupIds(userId));
             redis.set(key,model,Constants.UserGroupsGetExpire);
+        }
+        return model.getData();
+    }
+
+    @Override
+    public List<GroupVO> getUserGroups(String userId, RedisCache redis) {
+        ArrayDataModel<GroupVO> model;
+        String key = String.format("%s_%s",userId, CachingKeys.GetUserGroups);
+        if(redis.has(key))
+            model = (ArrayDataModel<GroupVO>) redis.get(key);
+        else{
+            model = new ArrayDataModel<>();
+            model.setData(groupMapper.getGroups(userId));
+            redis.set(key,model,Constants.NormalCachingExpire);
         }
         return model.getData();
     }
@@ -56,6 +76,12 @@ public class UserGroupService implements IUserGroupService {
         group.setSize(model.getSize());
         group.setAvatar(Constants.DefaultGroupAvatar);
         groupMapper.insert(group);
+        GroupContact contact = new GroupContact();
+        contact.setUserId(model.getOwnerId());
+        contact.setGroupId(group.getId());
+        contact.setCreateTime(group.getCreateTime());
+        contact.setStatus(UserContactStatus.NORMAL.value());
+        contactMapper.insert(contact);
         return group.getId();
     }
 

@@ -1,6 +1,7 @@
 package KChat.DbOption.Mapper;
 
 import KChat.Entity.UserApply;
+import KChat.Entity.VO.GroupApplyVO;
 import KChat.Entity.VO.UserApplyVO;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
@@ -14,7 +15,8 @@ import java.util.List;
 @Mapper
 public interface UserApplyMapper extends BaseMapper<UserApply> {
     List<UserApplyVO> getUserApplies(@Param("userId")String userId);
+    List<GroupApplyVO> getGroupApplies(@Param("userId")String userId);
 
-    @Update("update HeadMessage set ${ew.sqlSet} ${ew.customSqlSegment}")
+    @Update("update UserApply set ${ew.sqlSet} ${ew.customSqlSegment}")
     int update(@Param(Constants.WRAPPER) Wrapper<UserApply> wrapper);
 }

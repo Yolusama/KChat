@@ -135,4 +135,20 @@ public class UserController extends ControllerBase{
                                                     HttpServletRequest request){
         return successWithData(userContactService.createLabel(userId,labelName));
     }
+
+    @GetMapping("/IsOnline/{userId}")
+    public ActionResult<Boolean> IsOnline(@PathVariable String userId){
+        Boolean res = userService.isOnline(userId);
+        if(res==null)
+            return fail(HttpStatus.NOT_FOUND);
+        return successWithData(res);
+    }
+
+    @PatchMapping("/GoOffline/{userId}")
+    public ActionResult GoOffline(@PathVariable String userId){
+        int res = userService.goOffline(userId);
+        if(res == Constants.AbnormalState)
+            return fail();
+        return ok("已下线!");
+    }
 }

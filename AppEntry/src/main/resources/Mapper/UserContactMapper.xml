@@ -7,6 +7,6 @@
         select u.nickname,u.remark,u.signature,u.account,l.id as labelId,l.name as labelName from User u
            join UserContact on u.id = uc.contactId
             join ContactLabel l on l.id = uc.contactId
-        where uc.isGroup = 0 and uc.userId = #{userId} and uc.status not in(3,5)
+        where uc.userId = #{userId} and uc.status not in(3,5)
     </select>
 </mapper>

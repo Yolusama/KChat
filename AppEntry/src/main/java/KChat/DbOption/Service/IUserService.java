@@ -18,4 +18,6 @@ public interface IUserService{
     Boolean verifyToken(String userId,String token,RedisCache redis);
     UserInfoVO getUserInfo(String userId,String identifier);
     UserVO searchUser(String userId,String identifier);
+    Boolean isOnline(String userId);
+    int goOffline(String userId);
 }

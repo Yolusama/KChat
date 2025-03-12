@@ -16,6 +16,7 @@
             </where>
                order by cm.time desc
     </select>
+
     <select id="getUnReadCounts" resultType="java.lang.Integer">
         select count(1) from ChatMessage cm
                 join HeadMessage hm on cm.userId = hm.userId and cm.contactId = hm.contactId

@@ -63,7 +63,6 @@ public class UserContactService implements IUserContactService {
         UserContact userContact = new UserContact();
         userContact.setUserId(model.getUserId());
         userContact.setContactId(model.getContactId());
-        userContact.setIsGroup(false);
         userContact.setLabelId(model.getLabelId());
         userContact.setStatus(UserContactStatus.NORMAL.value());
         userContact.setCreateTime(Constants.now());

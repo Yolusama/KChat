@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="KChat.DbOption.Mapper.UserGroupMapper">
+    <select id="getGroups" resultType="KChat.Entity.VO.GroupVO">
+        select g.name,g.id,g.avatar,g.owenerId from UserGroup g
+            join GroupContact gc on g.id = gc.groupId
+              where gc.userId = #{userId} and gc.status = 1
+    </select>
+</mapper>

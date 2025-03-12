@@ -1,7 +1,7 @@
 package KChat.Entity.Enum;
 
 public enum UserApplyStatus {
-    VERIFY(1),IGNORE(2),REFUSE(3);
+    VERIFYING(1),ACCEPTED(2),IGNORED(3),REFUSED(4);
     private final int val;
     UserApplyStatus(int val){
         this.val = val;

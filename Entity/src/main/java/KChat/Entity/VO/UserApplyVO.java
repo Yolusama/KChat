@@ -9,7 +9,7 @@ public class UserApplyVO {
     private String contactId;
     private String contactName;
     private String contactAvatar;
-    private String applyId;
+    private Long applyId;
     private String time;
     private Integer status;
     private String info;

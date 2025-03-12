@@ -82,8 +82,50 @@ public class ChatMessageService implements IChatMessageService {
     public Long createMessage(ChatMessageModel model, MQMsgProducer msgProducer) {
         ChatMessage message = new ChatMessage();
         ObjectUtil.copy(model,message);
+        message.setRead(false);
         messageMapper.insert(message);
         msgProducer.produceAndSend(message);
         return message.getId();
+    }
+
+    @Override
+    @Transactional
+    public void createOfflineMessage(ChatMessageModel model) {
+        ChatMessage message = new ChatMessage();
+        ObjectUtil.copy(model,message);
+        message.setRead(false);
+        messageMapper.insert(message);
+        LambdaQueryWrapper<HeadMessage> wrapper1 = new LambdaQueryWrapper<>();
+        wrapper1.eq(HeadMessage::getUserId,model.getUserId()).eq(HeadMessage::getContactId,message.getContactId());
+        HeadMessage userHeadMsg = headMapper.selectOne(wrapper1);
+        if(userHeadMsg==null){
+            userHeadMsg = new HeadMessage();
+            userHeadMsg.setUserId(model.getUserId());
+            userHeadMsg.setContactId(model.getContactId());
+            userHeadMsg.setTime(model.getTime());
+            userHeadMsg.setContent(model.getContent());
+            headMapper.insert(userHeadMsg);
+        }
+        else{
+            userHeadMsg.setContent(model.getContent());
+            userHeadMsg.setTime(model.getTime());
+            headMapper.updateById(userHeadMsg);
+        }
+        LambdaQueryWrapper<HeadMessage> wrapper2 = new LambdaQueryWrapper<>();
+        wrapper2.eq(HeadMessage::getUserId,model.getContactId()).eq(HeadMessage::getContactId,message.getUserId());
+        HeadMessage contactHeadMsg = headMapper.selectOne(wrapper2);
+        if(contactHeadMsg == null){
+            contactHeadMsg = new HeadMessage();
+            contactHeadMsg.setUserId(model.getContactId());
+            contactHeadMsg.setContactId(model.getUserId());
+            contactHeadMsg.setTime(model.getTime());
+            contactHeadMsg.setContent(model.getContent());
+            headMapper.insert(contactHeadMsg);
+        }
+        else{
+            contactHeadMsg.setContent(model.getContent());
+            contactHeadMsg.setTime(model.getTime());
+            headMapper.updateById(contactHeadMsg);
+        }
     }
 }

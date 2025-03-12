@@ -60,4 +60,10 @@ public class ChatMessageController extends ControllerBase{
     public ActionResult<Long> CreateMessage(@RequestBody ChatMessageModel model){
         return successWithData(chatMessageService.createMessage(model,msgProducer));
     }
+
+    @PutMapping("/CreateOfflineMessage")
+    public ActionResult CreateOfflineMessage(@RequestBody ChatMessageModel model){
+        chatMessageService.createOfflineMessage(model);
+        return ok();
+    }
 }

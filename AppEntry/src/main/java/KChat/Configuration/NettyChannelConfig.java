@@ -5,23 +5,18 @@ import KChat.DbOption.Service.IUserGroupService;
 import KChat.DbOption.ServiceImpl.UserGroupService;
 import KChat.Entity.ChatMessage;
 import KChat.NettyServer;
-import KChat.Service.JwtService;
 import KChat.Service.RedisCache;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
-import io.netty.util.Attribute;
-import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
@@ -45,9 +40,9 @@ public class NettyChannelConfig {
                 // 处理文本消息
                 String frameContent = ((TextWebSocketFrame) frame).text();
                 ChatMessage message = objectMapper.readValue(frameContent,ChatMessage.class);
-                if(message.isGroup())
+                if(message.isGroup()&&NettyServer.GroupChannels.containsKey(message.getContactId()))
                     NettyServer.GroupChannels.get(message.getContactId()).writeAndFlush(frame);
-                else
+                else if(!message.isGroup()&&NettyServer.UserChannels.containsKey(message.getContactId()))
                     NettyServer.UserChannels.get(message.getContactId()).writeAndFlush(frame);
             } else if (frame instanceof CloseWebSocketFrame) {
                 // 处理关闭连接
@@ -59,7 +54,7 @@ public class NettyChannelConfig {
             Channel channel = ctx.channel();
             String token = channel.attr(NettyServer.TokenAttr).get();
             String userId = channel.attr(NettyServer.UserIdAttr).get();
-            List<String> groupIds = groupService.getUserGroups(userId,redis);
+            List<String> groupIds = groupService.getUserGroupIds(userId,redis);
             String key = String.format("%s_token",userId);
             if(!redis.has(key)||!redis.get(key).equals(token))
             {
@@ -103,7 +98,7 @@ public class NettyChannelConfig {
             Channel channel = ctx.channel();
             String userId = channel.attr(NettyServer.UserIdAttr).get();
             NettyServer.UserChannels.remove(userId);
-            List<String> groupIds = groupService.getUserGroups(userId,redis);
+            List<String> groupIds = groupService.getUserGroupIds(userId,redis);
             for(String groupId:groupIds){
                 if(NettyServer.GroupChannels.containsKey(groupId))
                 {

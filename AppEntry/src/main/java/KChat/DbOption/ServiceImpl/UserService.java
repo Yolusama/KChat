@@ -21,8 +21,10 @@ import KChat.Service.RedisCache;
 import KChat.Utils.ObjectUtil;
 import KChat.Utils.StringEncryptUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +41,7 @@ public class UserService implements IUserService {
     }
 
     @Override
+    @Transactional
     public Pair<UserLoginVO, UserLoginStatus> login(UserLoginModel model, JwtService jwtService, RedisCache redis) {
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(User::getAccount,model.getAccount()).or().eq(User::getEmail,model.getAccount());
@@ -57,11 +60,13 @@ public class UserService implements IUserService {
         ObjectUtil.copy(user,res);
         res.setToken(token);
         user.setLastLoginTime(Constants.now());
+        user.setOffline(false);
         mapper.updateById(user);
         return Pair.makePair(res,UserLoginStatus.SUCCESS);
     }
 
     @Override
+    @Transactional
     public String register(UserRegModel model, String checkCode, RedisCache redis) {
         User user = mapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getEmail,model.getEmail()));
         if(user!=null)
@@ -107,11 +112,19 @@ public class UserService implements IUserService {
     }
 
     @Override
+    @Transactional
     public Boolean verifyToken(String userId, String token, RedisCache redis) {
         String key = String.format("%s_token",userId);
         if(!redis.has(key))
             return null;
-        return redis.get(key).equals(token);
+        Boolean res = redis.get(key).equals(token);
+        if(res){
+            LambdaUpdateWrapper<User> wrapper = new LambdaUpdateWrapper<>();
+            wrapper.set(User::getOffline,false).set(User::getLastLoginTime,Constants.now())
+                    .eq(User::getId,userId);
+            mapper.update(wrapper);
+        }
+        return res;
     }
 
     @Override
@@ -135,5 +148,21 @@ public class UserService implements IUserService {
         UserVO res = ObjectUtil.copy(user,new UserVO());
         res.setIsFriend(mapper.isFriend(userId,user.getId()).equals(Constants.NormalState));
         return res;
+    }
+
+    @Override
+    public Boolean isOnline(String userId) {
+        Boolean res = mapper.isOnline(userId);
+        if(res == null)
+            return null;
+        return !res;
+    }
+
+    @Override
+    public int goOffline(String userId) {
+        LambdaUpdateWrapper<User> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(User::getId,userId).set(User::getOffline,true).
+                set(User::getLastOfflineTime,Constants.now());
+        return mapper.update(wrapper);
     }
 }

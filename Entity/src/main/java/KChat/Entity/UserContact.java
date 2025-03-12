@@ -31,7 +31,7 @@ public class UserContact {
      */
     private String remark;
     /**
-     * 联系人状态，1.正常，2.拉黑，3.删除，4.被拉黑，5.被删除
+     * 联系人状态，为用户1.正常，2.拉黑，3.删除，4.被拉黑，5.被删除；为群组时：1.正常，2.被踢出群聊
      */
     private Integer status;
     /**
@@ -46,9 +46,4 @@ public class UserContact {
      * 更新时间
      */
     private Date updateTime;
-    /**
-     * 是否是对于群组的联系
-     */
-    @TableField(jdbcType = JdbcType.TINYINT)
-    private Boolean isGroup;
 }

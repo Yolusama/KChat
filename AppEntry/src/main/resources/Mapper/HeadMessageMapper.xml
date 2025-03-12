@@ -11,7 +11,7 @@
 
     <select id="getHeadMessages" resultType="KChat.Entity.VO.HeadMessageVO">
       select hm.id,hm.content,hm.contactId,hm.contactId,u.nickname as contactNickname,u.avatar as contactAvatar,hm.time
-      from User u join HeadMessage hm on u.id = hm.contactId
+      from User u join HeadMessage hm on u.id = hm.userId
                  where hm.userId = #{userId}
                      order by hm.time desc
     </select>

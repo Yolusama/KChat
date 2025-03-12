@@ -27,6 +27,10 @@ public class UserGroup{
     */
     private String ownerId;
     /**
+     * 群状态，1.正常，2.已解散
+     */
+    private Integer status;
+    /**
      * 当前群人数
      */
     private Integer currentCount;
