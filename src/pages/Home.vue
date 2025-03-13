@@ -24,7 +24,7 @@
         <el-icon class="no-drag">
           <Setting />
         </el-icon>
-      </el-menu-item>
+      </el-menu-item> 
     </el-menu>
     <router-view></router-view>
   </div>
