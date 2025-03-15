@@ -1,4 +1,6 @@
+import axios from "axios";
 import { app, BrowserWindow, ipcMain } from "electron";
+
 import path from "path";
 function processCorresponse(window) {
   ipcMain.on("minimize", () => {
@@ -11,7 +13,6 @@ function processCorresponse(window) {
 
   ipcMain.on("close", () => {
     window.close();
-    window.destroy();
   });
 
   ipcMain.on("restoreSize", () => {
@@ -27,6 +28,13 @@ function processCorresponse(window) {
 
   ipcMain.on("setMinBound", (event, width, height) => {
     window.setMinimumSize(width, height);
+  });
+
+  ipcMain.on("userLogan",(event,userId,token)=>{
+     window.userOption = {
+      userId:userId,
+      token:token
+     };
   });
 }
 
@@ -89,10 +97,20 @@ const createWindow = () => {
 
   processCorresponse(win);
 
+  win.on("close",async (event)=>{
+    if(win.userOption==undefined)return;
+    const { userId,token } = win.userOption;
+    await axios.patch(`http://localhost:5725/Api/User/GoOffline/${userId}`,{},{
+      headers:{
+        token:token
+      }
+    });
+  });
+
   ipcMain.on("openSearch", () => {
     const subWin = createSubWindow(win);
     if (app.isPackaged)
-      subWin.loadURL(`file://${__dirname}/index.htmL/#/Search`);
+      subWin.loadURL(`file://${__dirname}/index.html/#/Search`);
     else
       subWin.loadURL("http://localhost:5435/#/Search");
   });

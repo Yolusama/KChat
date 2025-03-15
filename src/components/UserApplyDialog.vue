@@ -8,7 +8,7 @@
       </div>
       <el-form label-position="right" label-width="auto">
         <el-form-item label="验证信息">
-          <el-input type="textarea" :rows="3" v-model="state.info"></el-input>
+          <el-input type="textarea" :rows="3" v-model="state.info" resize="none"></el-input>
         </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="state.remark"></el-input>
@@ -71,6 +71,7 @@ onMounted(() => {
 
     state.userId = user.id;
   }
+  state.labelId = labels.value[0].id;
 });
 
 function send() {

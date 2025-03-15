@@ -13,17 +13,22 @@
       </div>
       <div class="content">
          <div class="user-apply" v-if="state.showUserApply">
-            <div class="item no-drag" v-for="apply in state.data" :key="apply.contactId">
+            <div class="item no-drag" v-for="(apply, index) in state.data" :key="index">
                <div class="info">
                   <el-image :src="imgSrc(apply.contactAvatar)" :preview-src-list="[imgSrc(apply.contactAvatar)]"
-                     :preview-teleported="true"></el-image>
+                     :preview-teleported="true" v-if="state.userId == apply.userId"></el-image>
+                  <el-image :src="imgSrc(apply.userAvatar)" :preview-src-list="[imgSrc(apply.userAvatar)]"
+                     :preview-teleported="true" v-else></el-image>
                   <div style="display:flex;flex-direction:column">
-                     <span class="text-overflow name">{{ apply.contactName }}</span>
+                     <span class="text-overflow name">{{ state.userId == apply.userId ? apply.contactName :
+                        apply.userName
+                     }}</span>
                      <span v-if="apply.info != null" class="apply-info text-overflow">{{ apply.info }}</span>
                   </div>
                </div>
-               <span v-if="apply.status != 1">{{ getApplyStatusText(apply.status) }}</span>
-               <el-dropdown v-if="apply.status == 1" split-button size="small">
+               <span v-if="apply.status != 1 || state.userId != apply.contactId" class="status-text">{{ getApplyStatusText(apply.status)
+               }}</span>
+               <el-dropdown v-if="apply.status == 1 && state.userId == apply.contactId" split-button size="small">
                   <el-text type="success" @click="aggreUserApply(apply)">同意</el-text>
                   <template #dropdown>
                      <el-dropdown-menu>
@@ -47,7 +52,7 @@
                      <span v-if="apply.info != null" class="text-overflow apply-info">{{ apply.info }}</span>
                   </div>
                </div>
-               <span v-if="apply.contactStatus == 1 && apply.status != 1">{{ getApplyStatusText(apply.status) }} </span>
+               <span v-if="apply.contactStatus == 1 && apply.status != 1"  class="status-text">{{ getApplyStatusText(apply.status) }} </span>
                <el-dropdown v-if="apply.contactStatus == 1 && apply.status == 1" split-button>
                   <template #dropdown>
                      <el-text type="success" @click="aggreUserApply(apply)">同意</el-text>
@@ -75,9 +80,9 @@ import { GetGroupApplies, GetUserApplies, SetApplyStatus } from '../api/UserAppl
 import stateStroge from '../modules/StateStorage';
 import { imgSrc } from '../modules/Request';
 import { copy, GroupContactStatus, UserApplyStatus } from '../modules/Common';
-import { sendMessage } from '../modules/WebSocket';
+import  webSocket  from '../modules/WebSocket';
 import { IsUserOnline } from '../api/User';
-import { CreateOfflineMessage } from '../api/ChatMessage';
+import { CreateHeadMessage, CreateMessage, CreateOfflineMessage } from '../api/ChatMessage';
 
 const state = reactive<any>({
    showUserApply: false,
@@ -101,7 +106,6 @@ function loadUserApplies() {
 
    GetUserApplies(state.userId, res => {
       state.data = res.data;
-      console.log(state.data);
    });
 }
 
@@ -124,18 +128,32 @@ function modelFromApply(apply: any) {
 function aggreUserApply(apply: any) {
    const model = modelFromApply(apply);
    model.status = UserApplyStatus.Accepted;
+   const idTo = apply.userId == state.userId? apply.contactId : apply.userId;
    SetApplyStatus(model, () => {
       apply.status = model.status;
       const message = {
          userId: state.userId,
-         contactId: state.contactId,
+         contactId: idTo,
          content: apply.info,
          time: new Date(),
-         type: 1
-      }
-      IsUserOnline(state.userId, res => {
+         type: 1,
+         contactAvatar: apply.contactAvatar,
+         contactName : apply.contactName
+      };
+      IsUserOnline(idTo, res => {
          if (res.data)
-            sendMessage(message, () => { });
+            CreateMessage(message, () => {
+               CreateHeadMessage({
+                  userId: state.userId,
+                  contactId: idTo,
+                  time: message.time,
+                  content: apply.info,
+                  contactAvatar: apply.contactAvatar,
+                  contactName : apply.contactName
+               }, () => {
+                  webSocket.sendMessage(message, () => { })
+               });
+            });
          else
             CreateOfflineMessage(message);
       });
@@ -160,9 +178,10 @@ function ignoreUserApply(apply: any) {
 
 function getApplyStatusText(status: any) {
    switch (status) {
+      case UserApplyStatus.Verifying: return "等待验证中...";
       case UserApplyStatus.Accepted: return "已同意";
       case UserApplyStatus.Refused: return "已拒绝";
-      case UserApplyStatus.Verifying: return "已忽略";
+      case UserApplyStatus.Ignored: return "已忽略";
    }
 }
 
@@ -260,5 +279,10 @@ function groupStatusText(status: any) {
    height: 40px;
    border-radius: 50%;
    margin-right: 1%;
+}
+
+.user-apply .item .status-text{
+   color: gray;
+   font-size: 13px;
 }
 </style>

@@ -29,6 +29,7 @@ const pros = defineProps({
 });
 
 const inSearch = ref(pros.inSearch);
+const inLoginCom = ref(pros.inLoginCom);
 
 function minimize() {
    if (!inSearch.value)
@@ -54,10 +55,18 @@ function maximize() {
 }
 
 function close() {
+   if(inLoginCom.value){
+      closeWindow();
+      return;
+   }
+   closeWindow();
+}
+
+function closeWindow(){
    if (!inSearch.value)
-      ipcRenderer.send("close");
-   else
-      ipcRenderer.send("search-close");
+         ipcRenderer.send("close");
+      else
+         ipcRenderer.send("search-close");
 }
 </script>
 
@@ -85,7 +94,8 @@ function close() {
    margin-left: 10px;
 }
 
-#app-header .el-icon:hover,#app-header .image:hover {
+#app-header .el-icon:hover,
+#app-header .image:hover {
    cursor: pointer;
    background-color: rgb(235, 236, 235, .75);
 }

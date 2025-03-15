@@ -6,15 +6,15 @@
       <el-menu-item v-if="user != null">
         <img class="avatar no-drag" :src="imgSrc(user.avatar)" />
       </el-menu-item>
-      <el-menu-item index="/Home/Message" @click="unreadOpt.message=false">
-        <el-badge is-dot :hidden="!unreadOpt.message" :offset="[10,20]">
+      <el-menu-item index="/Home/Message" @click="unreadOpt.message = false">
+        <el-badge is-dot :hidden="!unreadOpt.message" :offset="[10, 20]">
           <el-icon class="no-drag">
             <ChatLineSquare />
           </el-icon>
         </el-badge>
       </el-menu-item>
-      <el-menu-item index="/Home/Contactors" @click="unreadOpt.apply=false">
-        <el-badge is-dot :hidden="!unreadOpt.apply" :offset="[10,20]">
+      <el-menu-item index="/Home/Contactors" @click="unreadOpt.apply = false">
+        <el-badge is-dot :hidden="!unreadOpt.apply" :offset="[10, 20]">
           <el-icon class="no-drag">
             <User></User>
           </el-icon>
@@ -24,7 +24,7 @@
         <el-icon class="no-drag">
           <Setting />
         </el-icon>
-      </el-menu-item> 
+      </el-menu-item>
     </el-menu>
     <router-view></router-view>
   </div>
@@ -35,17 +35,17 @@ import { ipcRenderer } from 'electron';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import stateStroge from '../modules/StateStorage';
 import { imgSrc } from '../modules/Request';
-import { assignWebSocket } from '../modules/WebSocket';
-import  sse  from '../modules/SSE';
+import webSocket from '../modules/WebSocket';
+import sse from '../modules/SSE';
 import { Route } from '../modules/Route';
-import { GoOffline } from '../api/User';
+import type { HeadMessage } from '../modules/Common';
+import { FreshHeadMessage } from '../api/ChatMessage';
 
 const user = ref<any>(null);
 const unreadOpt = ref<any>({
-  apply:false,
-  message:false
+  apply: false,
+  message: false
 });
-const webSocket = ref<WebSocket>();
 
 onMounted(() => {
   ipcRenderer.send("setSize", 800, 720, true);
@@ -53,23 +53,33 @@ onMounted(() => {
 
   const stored = stateStroge.get("user");
   user.value = stored;
-  webSocket.value = assignWebSocket();
+  ipcRenderer.send("userLogan", user.value.id, user.value.token);
   sse.addMsgFunc(messageCallback);
+  webSocket.assign();
+  webSocket.addMsgFunc(freshHeadMessage);
   Route.dive("#/Home/Message");
 });
 
 
-function messageCallback(event:MessageEvent<any>) {
-     const data = JSON.parse(event.data);
-     unreadOpt.value[data.key] = data["value"];
+function messageCallback(event: MessageEvent<any>) {
+  const data = JSON.parse(event.data);
+  unreadOpt.value[data.key] = data["value"];
+}
+
+function freshHeadMessage(event: MessageEvent<any>) {
+  const data = JSON.parse(event.data);
+  const headMsg: HeadMessage = {
+    userId: data.contactId,
+    contactId: data.userId,
+    content: data.content,
+    time: data.time
+  };
+  //FreshHeadMessage(headMsg, () => { });
 }
 
 onBeforeUnmount(() => {
   sse.close();
-  webSocket.value?.close();
-  const user = stateStroge.get("user");
-  GoOffline(user.id);
-});
+}); 
 </script>
 
 <style scoped>
@@ -85,7 +95,7 @@ onBeforeUnmount(() => {
   width: 75px;
 }
 
-#home .home-menu .el-menu-item{
+#home .home-menu .el-menu-item {
   display: flex;
   justify-content: center;
 }

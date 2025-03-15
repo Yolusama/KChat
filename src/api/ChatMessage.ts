@@ -8,11 +8,11 @@ function chatApiUrl(url:string){
     return messageApiPettern + url;
 }
 
-export function FreshHeadMessage(headMessage:HeadMessage,successCallback:(res:Result)=>void){
+export function FreshHeadMessage(headMessage:any,successCallback:(res:Result)=>void){
     api.post(chatApiUrl("/FreshHeadMessage"),authorization(),headMessage,successCallback);
 }
 
-export function CreateHeadMessage(headMessage:HeadMessage,successCallback:(res:Result)=>void){
+export function CreateHeadMessage(headMessage:any,successCallback:(res:Result)=>void){
     api.put(chatApiUrl("/CreateHeadMessage"),authorization(),headMessage,successCallback);
 }
 

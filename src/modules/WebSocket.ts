@@ -14,39 +14,78 @@ const defaultCloseCallback = () => {
     console.log("WebSocket关闭中...");
 }
 
-const defalutOpenCallback = () => {
+const defaultOpenCallback = () => {
     console.log("WebSocket已打开...");
 }
 const user = stateStroge.get("user");
 
-let _socket:WebSocket;
-export function assignWebSocket(openCallback = defalutOpenCallback, closeCallback = defaultCloseCallback,
-    errorCallback = defaultErrorCallback) {
-    const socket = new WebSocket(`${webSocketUrl}?userId=${user.id}&token=${user.token}`);
-    socket.onopen = openCallback;
-    socket.onmessage = null;
-    socket.onclose = () => {
-        closeCallback();
-        socket.onopen = null;
-        socket.onmessage = null;
-        socket.onerror = null;
-        socket.onclose = null;
-    };
-    socket.onerror = errorCallback;
-    _socket = socket;
-    return socket;
+class KWebSocket {
+    messagingFuncs: Record<string, (event: MessageEvent<any>) => void> = {};
+    private socket: WebSocket;
+    private closeCallback: (event: CloseEvent) => void = defaultCloseCallback;
+
+    constructor() {
+        this.socket = this.assign();
+    } 
+
+    assign() {
+        const socket = new WebSocket(`${webSocketUrl}?userId=${user.id}&token=${user.token}`);
+        socket.onopen = defaultOpenCallback;
+        socket.onmessage = (event) => {
+            for (let name in this.messagingFuncs)
+                this.messagingFuncs[name](event);
+        };
+        socket.onclose = (event) => {
+            this.closeCallback(event);
+            this.messagingFuncs = {};
+            socket.onopen = null;
+            socket.onmessage = null;
+            socket.onerror = null;
+            socket.onclose = null;
+        };
+        socket.onerror = defaultErrorCallback;
+        return socket;
+    }
+
+    assignOpenCallback(callback: (event: Event) => void) {
+        this.socket.onopen = callback;
+    }
+
+    assignCloseCallback(callback: (event: CloseEvent) => void) {
+        this.closeCallback = callback;
+    }
+
+    assignErrorCallback(callback: (event: Event) => void) {
+        this.socket.onerror = callback;
+    }
+
+    sendMessage(message: any, callback: () => void) {
+        try {
+            this.socket.send(JSON.stringify(message));
+            delayToRun(callback, 5);
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+
+    addMsgFunc(func: (event: MessageEvent<any>) => void) {
+        this.messagingFuncs[func.name] = func;
+    }
+
+    close() {
+        if (this.socket.readyState == this.socket.OPEN || this.socket.readyState == this.socket.CONNECTING)
+            webSocket.close();
+    }
+
+    removeMsgFunc(name:string) {
+        const data: Record<string, any> = {};
+        for (let funcName in this.messagingFuncs)
+            if (name != funcName)
+                data[funcName] = this.messagingFuncs[funcName];
+        this.messagingFuncs = data;
+    }
 }
 
-export function assignMessageCallback(messageCallback: ((message: MessageEvent<any>) => void) | null) {
-    _socket.onmessage = messageCallback;
-}
-
-export function sendMessage(message: any, callback: () => void) {
-    try {
-        _socket.send(JSON.stringify(message));
-        delayToRun(callback, 50);
-    }
-    catch (e) {
-        console.log(e);
-    }
-}
+const webSocket = new KWebSocket();
+export default webSocket;

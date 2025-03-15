@@ -48,7 +48,7 @@
 
 <script lang="ts" setup>
 import { reactive, onMounted, ref, onBeforeUnmount } from 'vue';
-import { assignMessageCallback, sendMessage } from '../modules/WebSocket';
+import webSocket from '../modules/WebSocket';
 import { copy, MessageType, PageOption, type ChatMessage, type HeadMessage } from '../modules/Common';
 import { CreateMessage, FreshHeadMessage, GetHeadMessages, GetMessages } from '../api/ChatMessage';
 import stateStroge from '../modules/StateStorage';
@@ -64,17 +64,19 @@ const state = reactive<any>({
 const currentHeadMessage = ref<any>(null);
 
 onMounted(() => {
-    assignMessageCallback(messageHandle); 
+    webSocket.addMsgFunc(messageHandle); 
+    webSocket.removeMsgFunc(freshHeadMessage.name);
+    webSocket.addMsgFunc(freshHeadMessage);
 
     const user = stateStroge.get("user");
     state.user = user;
     getData();
 });
 
-const msgPageOpt = ref<PageOption>(new PageOption(1, 5, []));
+const msgPageOpt = ref<PageOption>(new PageOption(1, 15, []));
 
 function messageHandle(event: MessageEvent<any>) {
-    const msg = event.data;
+    const msg = JSON.parse(event.data);
     if (currentHeadMessage.value!=null && currentHeadMessage.value.contactId == msg.contactId) {
         const { contactName, contactAvatar } = currentHeadMessage.value;
         msg.contactName = contactName;
@@ -84,15 +86,10 @@ function messageHandle(event: MessageEvent<any>) {
             msgPageOpt.value.data.push(msg);
         }
     }
-    const toUpdate:any = {};
-    copy(msg,toUpdate);
-    const temp = toUpdate.userId;
-    toUpdate.userId = toUpdate.contactId;
-    toUpdate.contactId = temp;
-    freshHeadMessage(toUpdate);
+    freshHeadMessage(msg);
 }
 
-function messageSend(headMessage: any) {
+function sendMessage(headMessage: any) {
     const { contactId, contactName, contactAvatar } = headMessage;
     const message: ChatMessage = {
         userId: state.user.id,
@@ -101,7 +98,7 @@ function messageSend(headMessage: any) {
         content: state.content,
         type: MessageType.common
     };
-    sendMessage(message, () => {
+    webSocket.sendMessage(message, () => {
         CreateMessage(message, res => {
             const data = res.data;
             const toAdd: any = {};
@@ -114,7 +111,7 @@ function messageSend(headMessage: any) {
                 msgPageOpt.value.data.push(toAdd);
             }
             state.content = "";
-            freshHeadMessage(toAdd);
+            getData();
         });
     });
 }
@@ -147,6 +144,8 @@ function freshHeadMessage(msg:any){
     else{
         headMessage.userId = msg.userId;
         headMessage.contactId = msg.contactId;
+        headMessage.contactAvatar = msg.contactAvatar;
+        headMessage.contactName = msg.contentName;
         headMessage.content = msg.content;
         headMessage.time = new Date();
     }
@@ -163,9 +162,8 @@ function freshHeadMessage(msg:any){
 }
 
 onBeforeUnmount(()=>{
-   assignMessageCallback(null);
+    webSocket.removeMsgFunc(messageHandle.name)
 });
-
 </script>
 
 <style scoped>
@@ -187,8 +185,6 @@ onBeforeUnmount(()=>{
 }
 
 #message .messages .head {
-
-    
     height: 30px;
     width: 100%;
 }
@@ -199,5 +195,11 @@ onBeforeUnmount(()=>{
     padding: 2px 3px;
     height: 50px;
     align-items: center;
+}
+
+#message .avatar{
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
 }
 </style>
