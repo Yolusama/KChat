@@ -40,6 +40,7 @@ public class NettyChannelConfig {
                 // 处理文本消息
                 String frameContent = ((TextWebSocketFrame) frame).text();
                 ChatMessage message = objectMapper.readValue(frameContent,ChatMessage.class);
+                frame.retain();
                 if(message.isGroup()&&NettyServer.GroupChannels.containsKey(message.getContactId()))
                     NettyServer.GroupChannels.get(message.getContactId()).writeAndFlush(frame);
                 else if(!message.isGroup()&&NettyServer.UserChannels.containsKey(message.getContactId()))

@@ -82,7 +82,7 @@ public class ChatMessageService implements IChatMessageService {
     public Long createMessage(ChatMessageModel model, MQMsgProducer msgProducer) {
         ChatMessage message = new ChatMessage();
         ObjectUtil.copy(model,message);
-        message.setRead(false);
+        message.setHandled(false);
         messageMapper.insert(message);
         msgProducer.produceAndSend(message);
         return message.getId();
@@ -93,7 +93,7 @@ public class ChatMessageService implements IChatMessageService {
     public void createOfflineMessage(ChatMessageModel model) {
         ChatMessage message = new ChatMessage();
         ObjectUtil.copy(model,message);
-        message.setRead(false);
+        message.setHandled(false);
         messageMapper.insert(message);
         LambdaQueryWrapper<HeadMessage> wrapper1 = new LambdaQueryWrapper<>();
         wrapper1.eq(HeadMessage::getUserId,model.getUserId()).eq(HeadMessage::getContactId,message.getContactId());

@@ -8,6 +8,7 @@ import KChat.DbOption.Mapper.UserMapper;
 import KChat.DbOption.Service.IUserService;
 import KChat.Entity.ContactLabel;
 import KChat.Entity.Enum.UserLoginStatus;
+import KChat.Entity.Enum.UserRole;
 import KChat.Entity.User;
 import KChat.Entity.VO.UserInfoVO;
 import KChat.Entity.VO.UserLoginVO;
@@ -85,6 +86,7 @@ public class UserService implements IUserService {
         user.setCreateTime(Constants.now());
         user.setGender(model.getGender());
         user.setPassword(StringEncryptUtil.getString(model.getPassword()));
+        user.setRole(UserRole.COMMON.value());
         mapper.insert(user);
         redis.remove(key);
         redis.remove(String.format("%s_%s", model.getEmail(),CachingKeys.CheckCodeGetInterval));
@@ -159,6 +161,7 @@ public class UserService implements IUserService {
     }
 
     @Override
+    @Transactional
     public int goOffline(String userId) {
         LambdaUpdateWrapper<User> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(User::getId,userId).set(User::getOffline,true).

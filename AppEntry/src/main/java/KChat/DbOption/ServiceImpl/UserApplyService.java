@@ -17,6 +17,7 @@ import KChat.Model.ArrayDataModel;
 import KChat.Model.UserApplyModel;
 import KChat.Service.MQMsgProducer;
 import KChat.Service.RedisCache;
+import KChat.Utils.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -107,8 +108,15 @@ public class UserApplyService implements IUserApplyService {
                 contact.setStatus(UserContactStatus.NORMAL.value());
                 contact.setContactId(model.getContactId());
                 contact.setCreateTime(Constants.now());
-                contact.setLabelId(model.getLabelId());
+                contact.setLabelId(model.getContactLabelId());
                 userContactMapper.insert(contact);
+                UserContact userContact = new UserContact();
+                userContact.setUserId(model.getContactId());
+                userContact.setContactId(model.getUserId());
+                userContact.setCreateTime(Constants.now());
+                userContact.setLabelId(model.getLabelId());
+                userContact.setStatus(UserContactStatus.NORMAL.value());
+                userContactMapper.insert(userContact);
             }
             else{
                 GroupContact contact = new GroupContact();

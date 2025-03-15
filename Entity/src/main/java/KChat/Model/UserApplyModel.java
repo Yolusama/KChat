@@ -11,5 +11,6 @@ public class UserApplyModel {
     private Integer acceptMode;
     private Integer status;
     private Long labelId;
+    private Long contactLabelId;
     private String info;
 }

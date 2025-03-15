@@ -3,17 +3,20 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="KChat.DbOption.Mapper.UserApplyMapper">
     <select id="getUserApplies" resultType="KChat.Entity.VO.UserApplyVO">
-        select ua.id as applyId,ua.info,ua.time,u.nickname as contactName,u.avatar as contactAvatar,
-                ua.contactId,ua.status from User u
-                   join UserApply ua on ua.contactId = u.id
-                  where ua.userId = #{userId} order by ua.time desc
+        select ua.id as applyId,ua.info,ua.time,u1.nickname as contactName,u1.avatar as contactAvatar,ua.labelId,
+                ua.contactId,ua.status,u2.nickname as userName,u2.avatar as userAvatar,u2.id as userId from User u1
+                   join UserApply ua on ua.contactId = u1.id
+                   join User u2 on ua.userId = u2.id
+                  where ua.userId = #{userId} or ua.contactId = #{userId}  order by ua.time desc
     </select>
 
     <select id="getGroupApplies" resultType="KChat.Entity.VO.GroupApplyVO">
        select g.id as groupId,g.avatar as groupAvatar,g.name as groupName,ua.status,ua.info,ua.time,ua.id as applyId,
-              g.currentCount as groupMemberCount,g.size as groupSize,gc.status as contactStatus
+              g.currentCount as groupMemberCount,g.size as groupSize,gc.status as contactStatus,u.id as applicantId,
+              u.nickName as applicantName,u.avatar as applicantAvatar
                  from UserGroup g join UserApply ua on g.id = ua.contactId
-                    join GroupContact gc on g.id = gc.groupId
-                   where ua.userId = #{userId} order by ua.time desc
+                     join User u on ua.userId = u.id
+                       left join GroupContact gc on g.id = gc.groupId
+                   where ua.userId = #{userId} or g.ownerId = #{userId} order by ua.time desc
     </select>
 </mapper>

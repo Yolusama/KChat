@@ -9,6 +9,9 @@ import java.util.Date;
 @Setter
 public class GroupApplyVO {
     private Long applyId;
+    private String applicantId;
+    private String applicantName;
+    private String applicantAvatar;
     private String groupId;
     private String groupAvatar;
     private String groupName;

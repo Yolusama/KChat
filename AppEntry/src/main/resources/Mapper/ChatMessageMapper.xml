@@ -20,7 +20,7 @@
     <select id="getUnReadCounts" resultType="java.lang.Integer">
         select count(1) from ChatMessage cm
                 join HeadMessage hm on cm.userId = hm.userId and cm.contactId = hm.contactId
-        where cm.read = 0 and hm.userId = #{userId}
-             order by hm.time desc
+        where cm.handled = 0 and hm.userId = #{userId}
+            order by hm.time desc
     </select>
 </mapper>

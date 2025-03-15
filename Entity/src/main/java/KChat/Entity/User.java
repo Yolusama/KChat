@@ -69,11 +69,11 @@ public class User{
     /**
     * 上一次离线时间
     */
-    private Long lastOfflineTime;
+    private Date lastOfflineTime;
     /**
-    * 用户角色
+    * 用户角色,1.管理员，2.普通用户
     */
-    private String role;
+    private Integer role;
     /**
     * 用户是否离线，0：在线，1：离线
     */

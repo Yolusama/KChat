@@ -46,7 +46,7 @@ public class ChatMessage {
     *是否已读
      */
     @TableField(jdbcType = JdbcType.TINYINT)
-    private Boolean read;
+    private Boolean handled;
     /**
     *消息收到/成功发送的时间
      */
