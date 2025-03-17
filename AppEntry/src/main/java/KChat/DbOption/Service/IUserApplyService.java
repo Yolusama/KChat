@@ -14,4 +14,5 @@ public interface IUserApplyService {
     List<GroupApplyVO> getGroupApplies(String userId,RedisCache redis);
     void makeApply(UserApplyModel model, MQMsgProducer msgProducer);
     int setApplyStatus(UserApplyModel model,MQMsgProducer msgProducer);
+    void removeContactorCache(String userId,Boolean isUserApply,RedisCache redis);
 }

@@ -10,7 +10,6 @@ public class UserApplyVO {
     private String userName;
     private String userAvatar;
     private String contactId;
-    private Long labelId;
     private String contactName;
     private String contactAvatar;
     private Long applyId;

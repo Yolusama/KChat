@@ -60,5 +60,11 @@ public class UserApplyController extends ControllerBase{
                 successWithData(applyService.getGroupApplies(userId,redis))
         );
     }
+
+    @PostMapping("/RemoveContactorCache/{userId}")
+    public ActionResult RemoveContactorCache(@PathVariable String userId,@RequestParam Boolean isUserApply){
+        applyService.removeContactorCache(userId,isUserApply,redis);
+        return ok();
+    }
 }
 

@@ -11,7 +11,7 @@ public class HeadMessageVO {
     private Long id;
     private String content;
     private String contactId;
-    private String contactNickname;
+    private String contactName;
     private String contactAvatar;
     private Integer unReadCount;
     private Date time;

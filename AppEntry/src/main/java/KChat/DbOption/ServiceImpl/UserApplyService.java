@@ -135,4 +135,12 @@ public class UserApplyService implements IUserApplyService {
             wrapper.set(UserApply::getStatus,model.getStatus());
         return applyMapper.update(wrapper);
     }
+
+    @Override
+    public void removeContactorCache(String userId,Boolean isUserApply, RedisCache redis) {
+        String key = isUserApply ? String.format("%s_%s",userId,CachingKeys.GetUserApplies)
+                : String.format("%s_%s",userId,CachingKeys.GetGroupApplies);
+        if(redis.has(key))
+            redis.remove(key);
+    }
 }

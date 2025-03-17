@@ -11,7 +11,7 @@ public class ChatMessageVO {
     private Long id;
     private String userId;
     private String contactId;
-    private String contactNickName;
+    private String contactName;
     private String contactAvatar;
     private Integer type;
     private String content;

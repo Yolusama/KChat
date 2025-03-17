@@ -3,7 +3,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="KChat.DbOption.Mapper.UserApplyMapper">
     <select id="getUserApplies" resultType="KChat.Entity.VO.UserApplyVO">
-        select ua.id as applyId,ua.info,ua.time,u1.nickname as contactName,u1.avatar as contactAvatar,ua.labelId,
+        select ua.id as applyId,ua.info,ua.time,u1.nickname as contactName,u1.avatar as contactAvatar,
                 ua.contactId,ua.status,u2.nickname as userName,u2.avatar as userAvatar,u2.id as userId from User u1
                    join UserApply ua on ua.contactId = u1.id
                    join User u2 on ua.userId = u2.id

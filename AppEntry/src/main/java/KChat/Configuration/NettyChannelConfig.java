@@ -3,7 +3,7 @@ package KChat.Configuration;
 import KChat.Common.Constants;
 import KChat.DbOption.Service.IUserGroupService;
 import KChat.DbOption.ServiceImpl.UserGroupService;
-import KChat.Entity.ChatMessage;
+import KChat.Model.SentChatMessageModel;
 import KChat.NettyServer;
 import KChat.Service.RedisCache;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,12 +39,13 @@ public class NettyChannelConfig {
             if (frame instanceof TextWebSocketFrame) {
                 // 处理文本消息
                 String frameContent = ((TextWebSocketFrame) frame).text();
-                ChatMessage message = objectMapper.readValue(frameContent,ChatMessage.class);
-                frame.retain();
-                if(message.isGroup()&&NettyServer.GroupChannels.containsKey(message.getContactId()))
-                    NettyServer.GroupChannels.get(message.getContactId()).writeAndFlush(frame);
-                else if(!message.isGroup()&&NettyServer.UserChannels.containsKey(message.getContactId()))
-                    NettyServer.UserChannels.get(message.getContactId()).writeAndFlush(frame);
+                SentChatMessageModel message = objectMapper.readValue(frameContent,SentChatMessageModel.class);
+                TextWebSocketFrame frameToSend = new TextWebSocketFrame(frameContent);
+                boolean isGroup = message.getContactId().indexOf(Constants.GroupIdPrefix)>=0;
+                if(isGroup&&NettyServer.GroupChannels.containsKey(message.getContactId()))
+                    NettyServer.GroupChannels.get(message.getContactId()).writeAndFlush(frameToSend);
+                else if(!isGroup&&NettyServer.UserChannels.containsKey(message.getContactId()))
+                    NettyServer.UserChannels.get(message.getContactId()).writeAndFlush(frameToSend);
             } else if (frame instanceof CloseWebSocketFrame) {
                 // 处理关闭连接
                 channelInactive(ctx);
