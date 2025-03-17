@@ -14,19 +14,23 @@
             </div>
         </div>
         <div class="empty" v-if="currentHeadMessage == null">
-            <el-image style="width: 100px; height: 100px" src="../assets/messages-empty.jpg" fit="fit"></el-image>
+            <img class="background" src="../assets/messages-empty.jpg" />
         </div>
-        <div class="messages" v-else-if="!currentHeadMessage.isVerification">
+        <div class="messages" v-else>
             <div class="head">
             </div>
-            <div class="message" v-for="message in msgPageOpt.data" :key="message.id">
-                <div class="content">
-                    <div class="user-info" v-if="message.userId == state.user.id">
+            <div class="message" v-for="message in msgPageOpt.data" :key="message.id" ref="messagesContent">
+                <div class="content"  v-if="message.userId == state.user.id">
+                    <div class="user-info right">
                         <img :src="imgSrc(state.user.avatar)" class="avatar">
                         <span class="text-overflow nickname">{{ state.user.nickname }}</span>
                         <span>{{ new Date(message.time).toLocaleString() }}</span>
                     </div>
-                    <div class="user-info" v-else>
+                    <div class="message-body" v-html="message.content">
+                    </div>
+                </div>
+                <div class="content left"  v-else>
+                    <div class="user-info left">
                         <img :src="imgSrc(message.avatar)" class="avatar">
                         <span class="text-overflow nickname">{{ message.nickname }}</span>
                         <span>{{ new Date(message.time).toLocaleString() }}</span>
@@ -34,14 +38,14 @@
                     <div class="message-body" v-html="message.content">
                     </div>
                 </div>
-                <div class="edit">
-                    <el-input v-model="state.content" :rows="4">
-                    </el-input>
+                <div class="edit no-drag">
+                    <textarea v-model="state.content" class="input" style="">
+                    </textarea>
+                    <el-tooltip effect="dark" content="按住ctrl+空格快速送" placement="top">
+                        <el-button type="primary" class="send">发送</el-button>
+                    </el-tooltip>
                 </div>
             </div>
-        </div>
-        <div v-else-if="currentHeadMessage.isVerification" class="verifications">
-
         </div>
     </div>
 </template>
@@ -49,7 +53,7 @@
 <script lang="ts" setup>
 import { reactive, onMounted, ref, onBeforeUnmount } from 'vue';
 import webSocket from '../modules/WebSocket';
-import { copy, MessageType, PageOption, type ChatMessage, type HeadMessage } from '../modules/Common';
+import { copy, MessageType, PageOption, type ChatMessage} from '../modules/Common';
 import { CreateMessage, FreshHeadMessage, GetHeadMessages, GetMessages } from '../api/ChatMessage';
 import stateStroge from '../modules/StateStorage';
 import { imgSrc } from '../modules/Request';
@@ -62,11 +66,10 @@ const state = reactive<any>({
 });
 
 const currentHeadMessage = ref<any>(null);
+const meesagesContent = ref<any>(null);
 
 onMounted(() => {
-    webSocket.addMsgFunc(messageHandle); 
-    webSocket.removeMsgFunc(freshHeadMessage.name);
-    webSocket.addMsgFunc(freshHeadMessage);
+    webSocket.assignMessageCallback(messageHandle);
 
     const user = stateStroge.get("user");
     state.user = user;
@@ -86,7 +89,11 @@ function messageHandle(event: MessageEvent<any>) {
             msgPageOpt.value.data.push(msg);
         }
     }
-    freshHeadMessage(msg);
+    const toFresh:any = {};
+    copy(msg,toFresh);
+    toFresh.userId = msg.contactId;
+    toFresh.contactId = msg.userId;
+    freshHeadMessage(toFresh);
 }
 
 function sendMessage(headMessage: any) {
@@ -126,7 +133,7 @@ function getMessages(headMessage: any) {
     msgPageOpt.value.current = 1;
     msgPageOpt.value.total = 0;
 
-    GetMessages(msgPageOpt.value.current, msgPageOpt.value.size, state.user.id, headMessage.contractId, res => {
+    GetMessages(msgPageOpt.value.current, msgPageOpt.value.size, state.user.id, headMessage.contactId, res => {
         msgPageOpt.value.data = res.data.data;
         msgPageOpt.value.total = res.data.total;
     });
@@ -162,7 +169,7 @@ function freshHeadMessage(msg:any){
 }
 
 onBeforeUnmount(()=>{
-    webSocket.removeMsgFunc(messageHandle.name)
+    
 });
 </script>
 
@@ -172,6 +179,7 @@ onBeforeUnmount(()=>{
     /*calc函数使用需要空格隔开否则易被识别成字符串 */
     width: calc(100% - 50px);
     height: 100vh;
+    display: flex;
 }
 
 #message .head-messages {
@@ -195,11 +203,103 @@ onBeforeUnmount(()=>{
     padding: 2px 3px;
     height: 50px;
     align-items: center;
+    background-color: white;
 }
 
 #message .avatar{
     width: 35px;
     height: 35px;
     border-radius: 50%;
+}
+
+#message .content{
+    position: relative;
+    display: flex;
+    flex-flow:column nowrap;
+}
+
+#message .user-info{
+    display: flex;
+    align-items: center;
+    height: 32px;
+}
+
+#message .left{
+    justify-content: flex-start;
+}
+
+#message .right{
+    justify-content: flex-end;
+}
+
+#message .message-body{
+    position: absolute;
+    text-wrap: wrap;
+    max-width: 60vw;
+    font-size: 14px;
+    text-align: left;
+    border-radius: 7px;
+    top:3px;
+}
+
+.left .message-body{
+    background: white;
+    color:black;
+    left:5px
+}
+
+.right .message-body{
+    background-color: rgb(0,125,225);
+    color: white;
+    right: 6px;
+}
+
+#message .empty{
+    height: 100%;
+    position: relative;
+    width:66vw;
+    background-color: rgb(248,248,248);
+}
+
+.empty .background{
+    position: absolute;
+    left:50%;
+    top:  50%;
+    transform: translate(-50%,-50%);
+    width: 240px;
+    height: 240px;
+}
+
+#message .messages{
+    position: relative;
+    height: 100vh;
+    width:68vw;
+    background-color: rgb(248,248,248);
+    padding-right: 2%;
+}
+
+#message .edit{
+    position: absolute;
+    bottom: 1px;
+    width: 100%;
+}
+
+.edit .send{
+    position: absolute;
+    right: 26px;
+    bottom: 5px;
+    z-index: 2;
+}
+
+#message .edit .input{
+    border: none;
+    outline: none;
+    resize: none;
+    display: block;
+    width: 98%;
+    height: 25vh;
+    /*background-color: rgb(248,248,248);*/
+    font-size: 14px;
+    font-family: "SimSun"  ;
 }
 </style>

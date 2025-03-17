@@ -35,11 +35,9 @@ import { ipcRenderer } from 'electron';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import stateStroge from '../modules/StateStorage';
 import { imgSrc } from '../modules/Request';
-import webSocket from '../modules/WebSocket';
 import sse from '../modules/SSE';
 import { Route } from '../modules/Route';
 import type { HeadMessage } from '../modules/Common';
-import { FreshHeadMessage } from '../api/ChatMessage';
 
 const user = ref<any>(null);
 const unreadOpt = ref<any>({
@@ -54,9 +52,7 @@ onMounted(() => {
   const stored = stateStroge.get("user");
   user.value = stored;
   ipcRenderer.send("userLogan", user.value.id, user.value.token);
-  sse.addMsgFunc(messageCallback);
-  webSocket.assign();
-  webSocket.addMsgFunc(freshHeadMessage);
+  sse.assignMessageCallback(messageCallback);
   Route.dive("#/Home/Message");
 });
 
@@ -66,16 +62,7 @@ function messageCallback(event: MessageEvent<any>) {
   unreadOpt.value[data.key] = data["value"];
 }
 
-function freshHeadMessage(event: MessageEvent<any>) {
-  const data = JSON.parse(event.data);
-  const headMsg: HeadMessage = {
-    userId: data.contactId,
-    contactId: data.userId,
-    content: data.content,
-    time: data.time
-  };
-  //FreshHeadMessage(headMsg, () => { });
-}
+
 
 onBeforeUnmount(() => {
   sse.close();

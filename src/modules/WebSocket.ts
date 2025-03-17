@@ -20,24 +20,18 @@ const defaultOpenCallback = () => {
 const user = stateStroge.get("user");
 
 class KWebSocket {
-    messagingFuncs: Record<string, (event: MessageEvent<any>) => void> = {};
     private socket: WebSocket;
     private closeCallback: (event: CloseEvent) => void = defaultCloseCallback;
 
     constructor() {
         this.socket = this.assign();
-    } 
+    }
 
     assign() {
         const socket = new WebSocket(`${webSocketUrl}?userId=${user.id}&token=${user.token}`);
         socket.onopen = defaultOpenCallback;
-        socket.onmessage = (event) => {
-            for (let name in this.messagingFuncs)
-                this.messagingFuncs[name](event);
-        };
         socket.onclose = (event) => {
             this.closeCallback(event);
-            this.messagingFuncs = {};
             socket.onopen = null;
             socket.onmessage = null;
             socket.onerror = null;
@@ -59,6 +53,10 @@ class KWebSocket {
         this.socket.onerror = callback;
     }
 
+    assignMessageCallback(callback:(event:MessageEvent<any>)=>void){
+        this.socket.onmessage = callback;
+    }
+
     sendMessage(message: any, callback: () => void) {
         try {
             this.socket.send(JSON.stringify(message));
@@ -68,22 +66,10 @@ class KWebSocket {
             console.log(e);
         }
     }
-
-    addMsgFunc(func: (event: MessageEvent<any>) => void) {
-        this.messagingFuncs[func.name] = func;
-    }
-
+    
     close() {
         if (this.socket.readyState == this.socket.OPEN || this.socket.readyState == this.socket.CONNECTING)
             webSocket.close();
-    }
-
-    removeMsgFunc(name:string) {
-        const data: Record<string, any> = {};
-        for (let funcName in this.messagingFuncs)
-            if (name != funcName)
-                data[funcName] = this.messagingFuncs[funcName];
-        this.messagingFuncs = data;
     }
 }
 

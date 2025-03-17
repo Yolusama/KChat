@@ -23,3 +23,7 @@ export function GetGroupApplies(userId:string,successCallback:(res:Result)=>void
 export function SetApplyStatus(apply:Record<string,any>,successCallback:(res:Result)=>void){
     api.patch(applyApiUrl("/SetApplyStatus"),authorization(),apply,successCallback);
 }
+
+export function RemoveContactorCache(userId:string,isUserApply:boolean,successCallback:(res:Result)=>void){
+    api.post(applyApiUrl(`/RemoveContactorCache/${userId}?isUserApply=${isUserApply}`),authorization(),{},successCallback);
+}

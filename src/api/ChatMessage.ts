@@ -1,4 +1,3 @@
-import type { ChatMessage, HeadMessage } from "../modules/Common";
 import type { Result } from "../modules/Request";
 import { api, authorization } from "./Api";
 
@@ -16,7 +15,7 @@ export function CreateHeadMessage(headMessage:any,successCallback:(res:Result)=>
     api.put(chatApiUrl("/CreateHeadMessage"),authorization(),headMessage,successCallback);
 }
 
-export function CreateMessage(chatMessage:ChatMessage,successCallback:(res:Result)=>void){
+export function CreateMessage(chatMessage:any,successCallback:(res:Result)=>void){
     api.put(chatApiUrl("/CreateMessage"),authorization(),chatMessage,successCallback);
 }
 
@@ -31,5 +30,5 @@ export function GetMessages(currentPage:number,pageSize:number,userId:string,con
 }
 
 export function CreateOfflineMessage(chatMessage:any){
-    api.put(chatApiUrl("/CreateOfflineMessage"),authorization(),chatMessage,null);
+    api.put(chatApiUrl("/CreateOfflineMessage"),authorization(),chatMessage);
 }
