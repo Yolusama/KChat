@@ -38,9 +38,9 @@ public class UserGroupController extends ControllerBase{
 
     @PostMapping("/UploadAvatar/{userId}")
     @ClearRedisCache(keys = {CachingKeys.GetUserGroups})
-    public ActionResult<String> UploadAvatar(@PathVariable String userId,
+    public ActionResult<String> UploadAvatar(@PathVariable String groupId,
                                      @RequestPart("file")MultipartFile file,@RequestPart("avatar")String avatar){
-        return successWithData(groupService.uploadAvatar(userId,avatar,file,fileService));
+        return successWithData(groupService.uploadAvatar(groupId,avatar,file,fileService));
     }
 
     @GetMapping("/GetGroups/{userId}")

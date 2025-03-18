@@ -87,9 +87,9 @@ public class UserGroupService implements IUserGroupService {
 
     @Override
     @Transactional
-    public String uploadAvatar(String userId, String avatar, MultipartFile file, FileService fileService) {
+    public String uploadAvatar(String groupId, String avatar, MultipartFile file, FileService fileService) {
         LambdaUpdateWrapper<UserGroup> wrapper = new LambdaUpdateWrapper<>();
-        wrapper.eq(UserGroup::getOwnerId,userId);
+        wrapper.eq(UserGroup::getId,groupId);
         String res = Constants.DefaultGroupAvatar;
         if(!avatar.equals(Constants.DefaultGroupAvatar))
         {

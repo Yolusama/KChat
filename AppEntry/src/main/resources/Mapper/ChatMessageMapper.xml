@@ -14,7 +14,7 @@
                     cm.userId = #{userId} and cm.contactId = #{contactId}
                 </if>
             </where>
-               order by cm.time desc
+               order by cm.time
     </select>
 
     <select id="getUnReadCounts" resultType="java.lang.Integer">
