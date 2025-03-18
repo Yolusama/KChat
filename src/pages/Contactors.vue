@@ -3,12 +3,12 @@
       <div class="head no-drag">
          <search-com></search-com>
          <div class="notifications">
-            <el-badge is-dot :hidden="!state.notifyOpt.u" style="width:100%" :offset="[-20,5]">
+            <el-badge is-dot :hidden="!state.notifyOpt.u" style="width:100%" :offset="[-20, 5]">
                <div class="item" @click="loadUserApplies"> <span>好友通知</span> <el-icon>
                      <ArrowRight />
                   </el-icon></div>
             </el-badge>
-            <el-badge is-dot :hidden="!state.notifyOpt.g"  style="width:100%">
+            <el-badge is-dot :hidden="!state.notifyOpt.g" style="width:100%">
                <div class="item" @click="loadGroupNotices"><span>群通知 </span><el-icon>
                      <ArrowRight />
                   </el-icon></div>
@@ -32,9 +32,9 @@
                </div>
                <span v-if="apply.status != 1 || state.userId != apply.contactId" class="status-text">{{
                   getApplyStatusText(apply)
-                  }}</span>
+               }}</span>
                <el-dropdown v-if="apply.status == 1 && state.userId == apply.contactId" split-button size="small">
-                  <el-text type="success" @click="aggreUserApply(apply)">同意</el-text>
+                  <el-text type="success" @click="state.labelShow=true;state.selectedApply=apply;">同意</el-text>
                   <template #dropdown>
                      <el-dropdown-menu>
                         <el-dropdown-item> <el-button type="danger" size="small"
@@ -59,7 +59,7 @@
                </div>
                <span v-if="apply.contactStatus == 1 && apply.status != 1" class="status-text">{{
                   getApplyStatusText(apply)
-                  }} </span>
+               }} </span>
                <el-dropdown v-if="apply.contactStatus == 1 && apply.status == 1" split-button>
                   <template #dropdown>
                      <el-text type="success" @click="aggreUserApply(apply)">同意</el-text>
@@ -78,6 +78,21 @@
             </div>
          </div>
       </div>
+      <el-dialog v-model="state.labelShow" @close="state.labelId = 0;state.selectedApply=null;">
+         <div style="width:30vw">
+            <el-select v-model="state.labelId">
+               <el-option v-for="item in state.labels" :key="item.id" :label="item.name" :value="item.id">
+               </el-option>
+            </el-select>
+            <div @click="addLabel">
+            <el-icon>
+              <Plus />
+            </el-icon>添加分组
+          </div>
+            <el-button type="primary" @click="aggreUserApply(state.selectedApply)">确定</el-button>
+            <el-button type="info" @click="state.labelShow = false">取消</el-button>
+         </div>
+      </el-dialog>
    </div>
 </template>
 
@@ -88,8 +103,9 @@ import stateStroge from '../modules/StateStorage';
 import { imgSrc } from '../modules/Request';
 import { copy, GroupContactStatus, UserApplyStatus, type HeadMessage } from '../modules/Common';
 import webSocket from '../modules/WebSocket';
-import { IsUserOnline } from '../api/User';
+import { CreateLabel, GetUserLabels, IsUserOnline } from '../api/User';
 import { CreateHeadMessage, CreateMessage, CreateOfflineMessage, FreshHeadMessage } from '../api/ChatMessage';
+import { ElMessageBox } from 'element-plus';
 
 const state = reactive<any>({
    showUserApply: false,
@@ -102,7 +118,11 @@ const state = reactive<any>({
    notifyOpt: {
       u: false,
       g: false
-   }
+   },
+   labelId: 0,
+   labelShow: false,
+   labels: [],
+   selectedApply:null
 });
 
 onMounted(() => {
@@ -110,6 +130,10 @@ onMounted(() => {
    state.userId = user.id;
 
    webSocket.assignMessageCallback(messageHandle);
+   GetUserLabels(user.id, res => {
+      state.labels = res.data;
+      state.labelId = state.labels[0].id;
+   });
 });
 
 function loadUserApplies() {
@@ -123,32 +147,32 @@ function loadUserApplies() {
    });
 }
 
-function messageHandle(event: MessageEvent<any>){
+function messageHandle(event: MessageEvent<any>) {
    const data = JSON.parse(event.data);
    console.log(data);
-   if(data.isVerification==undefined||!data.isVerification)return;
+   if (data.isVerification == undefined || !data.isVerification) return;
    const index = data.contactId.indexOf('G');
-   if(index>=0)
+   if (index >= 0)
       state.notifyOpt.g = true;
    else
       state.notifyOpt.u = true;
-   if(state.showUserApply||state.showGroupNotice){
-      const apply = state.data.find((a:any)=>a.applyId==data.applyId);
+   if (state.showUserApply || state.showGroupNotice) {
+      const apply = state.data.find((a: any) => a.applyId == data.applyId);
       apply.status = data.applyStatus;
-      
-      if(apply.status==UserApplyStatus.Accepted)
-          freshHeadMessage(data);
+
+      if (apply.status == UserApplyStatus.Accepted)
+         freshHeadMessage(data);
    }
 }
 
-function freshHeadMessage(data:any) {
-  const headMsg: HeadMessage = {
-    userId: data.contactId,
-    contactId: data.userId,
-    content: data.content,
-    time: data.time
-  }; 
-  FreshHeadMessage(headMsg, () => {});
+function freshHeadMessage(data: any) {
+   const headMsg: HeadMessage = {
+      userId: data.contactId,
+      contactId: data.userId,
+      content: data.content,
+      time: data.time
+   };
+   FreshHeadMessage(headMsg, () => { });
 }
 
 function loadGroupNotices() {
@@ -171,6 +195,7 @@ function modelFromApply(apply: any) {
 function aggreUserApply(apply: any) {
    const model = modelFromApply(apply);
    model.status = UserApplyStatus.Accepted;
+   model.contactLabelId = state.labelId;
    const idTo = apply.userId == state.userId ? apply.contactId : apply.userId;
    SetApplyStatus(model, () => {
       apply.status = model.status;
@@ -193,12 +218,14 @@ function aggreUserApply(apply: any) {
                   content: apply.info,
                   contactAvatar: apply.contactAvatar,
                   contactName: apply.contactName
-               }, () => RemoveContactorCache(idTo,true,()=>sendApplyMessage(apply))
+               }, () => RemoveContactorCache(idTo, true, () => sendApplyMessage(apply))
                );
             });
          else
             CreateOfflineMessage(message);
       });
+      if(state.selectedApply!=null)
+         state.labelShow = false;
    });
 }
 
@@ -219,14 +246,14 @@ function ignoreUserApply(apply: any) {
    });
 }
 
-function getApplyStatusText(apply:any) {
+function getApplyStatusText(apply: any) {
    const status = apply.status;
    const selfRequest = apply.userId == state.userId;
    switch (status) {
       case UserApplyStatus.Verifying: return "等待验证中...";
-      case UserApplyStatus.Accepted: return selfRequest? "已通过":"已同意";
-      case UserApplyStatus.Refused: return  selfRequest?  "对方拒绝了你的好友请求":"已拒绝";
-      case UserApplyStatus.Ignored: return  selfRequest? "等待对方验证..." : "已忽略";
+      case UserApplyStatus.Accepted: return selfRequest ? "已通过" : "已同意";
+      case UserApplyStatus.Refused: return selfRequest ? "对方拒绝了你的好友请求" : "已拒绝";
+      case UserApplyStatus.Ignored: return selfRequest ? "等待对方验证..." : "已忽略";
    }
 }
 
@@ -237,19 +264,36 @@ function groupStatusText(status: any) {
    }
 }
 
-function sendApplyMessage(apply:any){
-    const data = {
-      applyId:apply.applyId,
+function sendApplyMessage(apply: any) {
+   const data = {
+      applyId: apply.applyId,
       applyStatus: apply.status,
-      isVerification:true,
-      contactId:apply.userId,
-      contactName:apply.contactName,
-      contactAvatar:apply.contactAvatar,
-      userId:state.userId,
-      content:apply.info,
-      time:new Date()
-    };
-    webSocket.sendMessage(data,()=>{});
+      isVerification: true,
+      contactId: apply.userId,
+      contactName: apply.contactName,
+      contactAvatar: apply.contactAvatar,
+      userId: state.userId,
+      content: apply.info,
+      time: new Date()
+   };
+   webSocket.sendMessage(data, () => { });
+}
+
+function addLabel() {
+  ElMessageBox.prompt("新建分组", {
+    confirmButtonText: "确定",
+    cancelButtonText: "取消",
+  })
+    .then((value) => {
+      CreateLabel(state.userId, value, (res) => {
+        const index = state.labels.findIndex((l: any) => l.id == res.data.id);
+        if (index < 0) 
+          state.labels.push(res.data);
+      });
+    })
+    .catch(() => {
+      return;
+    });
 }
 </script>
 

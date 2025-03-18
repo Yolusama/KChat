@@ -134,3 +134,18 @@ export enum UserApplyStatus{
 export enum GroupContactStatus{
     KickOut = 2,Dismissed = 3
 }
+
+export const GroupSizes = [20,50,100,200,500,1000,1500,2000];
+export const DefaultGroupAvatar = "default-group.png";
+
+export function previewOpenFile(file:any,func:(reuslt:any)=>void)
+{
+  if (file) {
+    var reader = new FileReader();
+
+    reader.onload = function (e:any) {
+      func(e.target.result);
+    };
+    reader.readAsDataURL(file);
+  } 
+}

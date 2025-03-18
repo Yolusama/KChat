@@ -1,6 +1,6 @@
 <template>
     <div id="message">
-        <div class="head-messages">
+        <el-scrollbar class="head-messages">
             <search-com @search=""></search-com>
             <div class="head-message" v-for="(message) in state.headMessages" :key="message.id"
                 @click="getMessages(message)">
@@ -12,37 +12,36 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </el-scrollbar>
         <div class="empty" v-if="currentHeadMessage == null">
             <img class="background" src="../assets/messages-empty.jpg" />
         </div>
         <div class="messages" v-else>
             <div class="head">
+                {{ currentHeadMessage.contactName }}
             </div>
             <div class="message" v-for="message in msgPageOpt.data" :key="message.id" ref="messagesContent">
-                <div class="content"  v-if="message.userId == state.user.id">
+                <div class="content user" v-if="message.userId == state.user.id && !isGroupMsg(message.contactId)">
+                    <span class="time">{{ new Date(message.time).toLocaleString() }}</span>
                     <div class="user-info right">
+                        <div class="message-body" v-html="message.content">
+                        </div>
                         <img :src="imgSrc(state.user.avatar)" class="avatar">
-                        <span class="text-overflow nickname">{{ state.user.nickname }}</span>
-                        <span>{{ new Date(message.time).toLocaleString() }}</span>
-                    </div>
-                    <div class="message-body" v-html="message.content">
                     </div>
                 </div>
-                <div class="content left"  v-else>
+                <div class="content contactor" v-if="message.userId != state.user.id && !isGroupMsg(message.contactId)">
+                    <span class="time">{{ new Date(message.time).toLocaleString() }}</span>
                     <div class="user-info left">
-                        <img :src="imgSrc(message.avatar)" class="avatar">
-                        <span class="text-overflow nickname">{{ message.nickname }}</span>
-                        <span>{{ new Date(message.time).toLocaleString() }}</span>
-                    </div>
-                    <div class="message-body" v-html="message.content">
+                        <img :src="imgSrc(message.contactAvatar)" class="avatar">
+                        <div class="message-body" v-html="message.content">
+                        </div>
                     </div>
                 </div>
                 <div class="edit no-drag">
-                    <textarea v-model="state.content" class="input" style="">
+                    <textarea v-model="state.content" class="input" style="" @keydown="keyToSend">
                     </textarea>
                     <el-tooltip effect="dark" content="按住ctrl+空格快速送" placement="top">
-                        <el-button type="primary" class="send">发送</el-button>
+                        <el-button type="primary" class="send" @click="send">发送</el-button>
                     </el-tooltip>
                 </div>
             </div>
@@ -53,7 +52,7 @@
 <script lang="ts" setup>
 import { reactive, onMounted, ref, onBeforeUnmount } from 'vue';
 import webSocket from '../modules/WebSocket';
-import { copy, MessageType, PageOption, type ChatMessage} from '../modules/Common';
+import { copy, MessageType, PageOption, type ChatMessage } from '../modules/Common';
 import { CreateMessage, FreshHeadMessage, GetHeadMessages, GetMessages } from '../api/ChatMessage';
 import stateStroge from '../modules/StateStorage';
 import { imgSrc } from '../modules/Request';
@@ -80,17 +79,19 @@ const msgPageOpt = ref<PageOption>(new PageOption(1, 15, []));
 
 function messageHandle(event: MessageEvent<any>) {
     const msg = JSON.parse(event.data);
-    if (currentHeadMessage.value!=null && currentHeadMessage.value.contactId == msg.contactId) {
+    if (currentHeadMessage.value != null && currentHeadMessage.value.contactId == msg.userId) {
         const { contactName, contactAvatar } = currentHeadMessage.value;
         msg.contactName = contactName;
         msg.contactAvatar = contactAvatar;
-        if (msgPageOpt.value.current < msgPageOpt.value.size) {
+        if (msgPageOpt.value.data.length >= msgPageOpt.value.size) {
             msgPageOpt.value.data.splice(0, 1);
             msgPageOpt.value.data.push(msg);
         }
+        else
+            msgPageOpt.value.data.push(msg);
     }
-    const toFresh:any = {};
-    copy(msg,toFresh);
+    const toFresh: any = {};
+    copy(msg, toFresh);
     toFresh.userId = msg.contactId;
     toFresh.contactId = msg.userId;
     freshHeadMessage(toFresh);
@@ -98,27 +99,27 @@ function messageHandle(event: MessageEvent<any>) {
 
 function sendMessage(headMessage: any) {
     const { contactId, contactName, contactAvatar } = headMessage;
-    const message: ChatMessage = {
+    const message: any = {
         userId: state.user.id,
         contactId: contactId,
         time: new Date(),
         content: state.content,
-        type: MessageType.common
+        type: MessageType.common,
+        contactName: contactName,
+        contactAvatar: contactAvatar
     };
     webSocket.sendMessage(message, () => {
         CreateMessage(message, res => {
             const data = res.data;
-            const toAdd: any = {};
-            copy(message, toAdd);
-            toAdd.id = data;
-            toAdd.contactIdName = contactName;
-            toAdd.contactAvatar = contactAvatar;
-            if (msgPageOpt.value.current < msgPageOpt.value.size) {
+            message.id = data;
+            if (msgPageOpt.value.data.length >= msgPageOpt.value.size) {
                 msgPageOpt.value.data.splice(0, 1);
-                msgPageOpt.value.data.push(toAdd);
+                msgPageOpt.value.data.push(message);
             }
+            else
+                msgPageOpt.value.data.push(message);
             state.content = "";
-            getData();
+            freshHeadMessage(message);
         });
     });
 }
@@ -141,35 +142,48 @@ function getMessages(headMessage: any) {
     currentHeadMessage.value = headMessage;
 }
 
-function freshHeadMessage(msg:any){
-    const headMessage:any = {};
-    if(currentHeadMessage.value!=null){
-         copy(currentHeadMessage.value,headMessage);
-         headMessage.content = msg.content;
-         headMessage.time = new Date();
-    }
-    else{
-        headMessage.userId = msg.userId;
-        headMessage.contactId = msg.contactId;
-        headMessage.contactAvatar = msg.contactAvatar;
-        headMessage.contactName = msg.contentName;
-        headMessage.content = msg.content;
-        headMessage.time = new Date();
-    }
-    FreshHeadMessage(headMessage,(res)=>{
+function freshHeadMessage(msg: any) {
+    const headMessage: any = {};
+    headMessage.userId = msg.userId;
+    headMessage.contactId = msg.contactId;
+    headMessage.contactAvatar = msg.contactAvatar;
+    headMessage.contactName = msg.contactName;
+    headMessage.content = msg.content;
+    headMessage.time = new Date();
+    FreshHeadMessage(headMessage, (res) => {
         const id = res.data;
-        const index:number = state.headMessages.findIndex((h: any)=>h.id==id);
-        if(index<0){
+        const index: number = state.headMessages.findIndex((h: any) => h.id == id);
+        if (index < 0) {
             headMessage.id = id;
-            state.headMessages.splice(0,0,headMessage);
+            state.headMessages.splice(0, 0, headMessage);
         }
-        else
+        else {
+            headMessage.id = id;
             state.headMessages[index] = headMessage;
+        }
     });
 }
 
-onBeforeUnmount(()=>{
-    
+function isGroupMsg(contactId: any): boolean {
+    return contactId.includes('G');
+}
+
+function keyToSend(event: KeyboardEvent) {
+    const key = event.key;
+
+    if (event.ctrlKey) {
+        if (key == "Enter")
+            sendMessage(currentHeadMessage.value);
+    }
+}
+
+function send() {
+    if (state.content.length == 0) return;
+    sendMessage(currentHeadMessage.value);
+}
+
+onBeforeUnmount(() => {
+
 });
 </script>
 
@@ -195,6 +209,10 @@ onBeforeUnmount(()=>{
 #message .messages .head {
     height: 30px;
     width: 100%;
+    font-size: 18px;
+    font-weight: 600;
+    text-align: left;
+    padding-left: 1%;
 }
 
 #message .head-message {
@@ -206,100 +224,148 @@ onBeforeUnmount(()=>{
     background-color: white;
 }
 
-#message .avatar{
+.head-message .nickname {
+    color: black;
+    font-size: 15px;
+}
+
+.head-message .info {
+    margin-left: 5px;
+}
+
+.head-message .info .content {
+    width: 96%;
+    font-size: 13px;
+    color: gray;
+    text-align: left;
+}
+
+#message .avatar {
     width: 35px;
     height: 35px;
     border-radius: 50%;
 }
 
-#message .content{
-    position: relative;
-    display: flex;
-    flex-flow:column nowrap;
+#message .head-message .avatar {
+    width: 45px;
+    height: 45px;
 }
 
-#message .user-info{
+#message .content {
+    position: relative;
+    display: flex;
+    flex-flow: column nowrap;
+    padding-left: 1%;
+}
+
+#message .user {
+    align-items: flex-end;
+}
+
+#message .contactor {
+    align-items: flex-start;
+}
+
+#message .user-info {
     display: flex;
     align-items: center;
     height: 32px;
+    width: 100%;
 }
 
-#message .left{
+#message .left {
     justify-content: flex-start;
 }
 
-#message .right{
+#message .right {
     justify-content: flex-end;
 }
 
-#message .message-body{
-    position: absolute;
+#message .content .message-body {
     text-wrap: wrap;
     max-width: 60vw;
     font-size: 14px;
     text-align: left;
     border-radius: 7px;
-    top:3px;
+    height: 20px;
+    padding: 1%;
+    width: fit-content;
+    margin-top: 1%;
 }
 
-.left .message-body{
+.user .message-body {
     background: white;
-    color:black;
-    left:5px
+    color: black;
+    margin-right: 1%;
 }
 
-.right .message-body{
-    background-color: rgb(0,125,225);
+.contactor .message-body {
+    background-color: rgb(0, 125, 225);
     color: white;
-    right: 6px;
+    margin-left: 1%;
 }
 
-#message .empty{
+#message .empty {
     height: 100%;
     position: relative;
-    width:66vw;
-    background-color: rgb(248,248,248);
+    width: 66vw;
+    background-color: rgb(248, 248, 248);
 }
 
-.empty .background{
+.empty .background {
     position: absolute;
-    left:50%;
-    top:  50%;
-    transform: translate(-50%,-50%);
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
     width: 240px;
     height: 240px;
 }
 
-#message .messages{
+#message .messages {
     position: relative;
     height: 100vh;
-    width:68vw;
-    background-color: rgb(248,248,248);
+    width: 66vw;
+    background-color: rgb(248, 248, 248);
     padding-right: 2%;
 }
 
-#message .edit{
+#message .edit {
     position: absolute;
     bottom: 1px;
     width: 100%;
+    background-color: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
 }
 
-.edit .send{
-    position: absolute;
-    right: 26px;
-    bottom: 5px;
-    z-index: 2;
+.edit .send {
+    margin-right: 2%;
+    margin-bottom: 1%;
 }
 
-#message .edit .input{
+#message .edit .input {
     border: none;
     outline: none;
     resize: none;
     display: block;
-    width: 98%;
+    width: 99%;
     height: 25vh;
-    /*background-color: rgb(248,248,248);*/
+    background-color: rgb(248, 248, 248);
     font-size: 14px;
-    font-family: "SimSun"  ;
+    font-family: "SimSun", "STSong", "Microsoft YaHei ";
+}
+
+#message .user-info .nickname {
+    font-size: 13px;
+    color: gray;
+    width: 10%;
+}
+
+#message .time {
+    font-size: 11px;
+    color: gray;
+    width: 100%;
+    text-align: center;
 }
 </style>
