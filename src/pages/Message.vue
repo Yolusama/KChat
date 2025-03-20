@@ -1,14 +1,22 @@
 <template>
     <div id="message">
         <el-scrollbar class="head-messages">
-            <search-com @search=""></search-com>
-            <div class="head-message" v-for="(message) in state.headMessages" :key="message.id"
-                @click="getMessages(message)">
+            <search-com @search="" @groupCreated="createdGroup"></search-com>
+            <div class="head-message" v-for="(message, index) in state.headMessages" :key="index"
+                @click="getMessages(message)" :style="currentHeadMessage != null && currentHeadMessage.id == message.id ?
+                    'background-color:rgb(0,155,245);' : ''">
                 <img :src="imgSrc(message.contactAvatar)" class="avatar">
-                <div>
-                    <div class="info">
-                        <span class="text-overflow nickname">{{ message.contactName }}</span>
-                        <span class="text-overflow content">{{ message.content }}</span>
+                <div class="info">
+                    <div class="between">
+                        <span class="text-overflow nickname" :style="currentHeadMessage != null && currentHeadMessage.id == message.id ?
+                            'color:white' : ''">{{ message.contactName }}</span>
+                        <span class="time" :style="currentHeadMessage != null && currentHeadMessage.id == message.id ?
+                            'color:white' : ''">{{ timeWithoutSeconds(new Date(message.time)) }}</span>
+                    </div>
+                    <div class="between">
+                        <span class="text-overflow content" 
+                        :style="currentHeadMessage != null && currentHeadMessage.id == message.id ?
+                            'color:white' : ''">{{ message.content }}</span>
                     </div>
                 </div>
             </div>
@@ -20,30 +28,33 @@
             <div class="head">
                 {{ currentHeadMessage.contactName }}
             </div>
-            <div class="message" v-for="message in msgPageOpt.data" :key="message.id" ref="messagesContent">
-                <div class="content user" v-if="message.userId == state.user.id && !isGroupMsg(message.contactId)">
-                    <span class="time">{{ new Date(message.time).toLocaleString() }}</span>
-                    <div class="user-info right">
-                        <div class="message-body" v-html="message.content">
-                        </div>
-                        <img :src="imgSrc(state.user.avatar)" class="avatar">
-                    </div>
-                </div>
-                <div class="content contactor" v-if="message.userId != state.user.id && !isGroupMsg(message.contactId)">
-                    <span class="time">{{ new Date(message.time).toLocaleString() }}</span>
-                    <div class="user-info left">
-                        <img :src="imgSrc(message.contactAvatar)" class="avatar">
-                        <div class="message-body" v-html="message.content">
+            <el-scrollbar style="height:60%">
+                <div class="message" v-for="message in msgPageOpt.data" :key="message.id" ref="messagesContent">
+                    <div class="content user" v-if="message.userId == state.user.id && !isGroupMsg(message.contactId)">
+                        <span class="time">{{ new Date(message.time).toLocaleString() }}</span>
+                        <div class="user-info right">
+                            <div class="message-body" v-html="message.content">
+                            </div>
+                            <img :src="imgSrc(state.user.avatar)" class="avatar">
                         </div>
                     </div>
+                    <div class="content contactor"
+                        v-if="message.userId != state.user.id && !isGroupMsg(message.contactId)">
+                        <span class="time">{{ new Date(message.time).toLocaleString() }}</span>
+                        <div class="user-info left">
+                            <img :src="imgSrc(message.contactAvatar)" class="avatar">
+                            <div class="message-body" v-html="message.content">
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="edit no-drag">
-                    <textarea v-model="state.content" class="input" style="" @keydown="keyToSend">
+            </el-scrollbar>
+            <div class="edit no-drag">
+                <textarea v-model="state.content" class="input" style="" @keydown="keyToSend">
                     </textarea>
-                    <el-tooltip effect="dark" content="按住ctrl+空格快速送" placement="top">
-                        <el-button type="primary" class="send" @click="send">发送</el-button>
-                    </el-tooltip>
-                </div>
+                <el-tooltip effect="dark" content="按住ctrl+空格快速送" placement="top">
+                    <el-button type="primary" class="send" @click="send">发送</el-button>
+                </el-tooltip>
             </div>
         </div>
     </div>
@@ -52,7 +63,7 @@
 <script lang="ts" setup>
 import { reactive, onMounted, ref, onBeforeUnmount } from 'vue';
 import webSocket from '../modules/WebSocket';
-import { copy, MessageType, PageOption, type ChatMessage } from '../modules/Common';
+import { copy, MessageType, PageOption, timeWithoutSeconds } from '../modules/Common';
 import { CreateMessage, FreshHeadMessage, GetHeadMessages, GetMessages } from '../api/ChatMessage';
 import stateStroge from '../modules/StateStorage';
 import { imgSrc } from '../modules/Request';
@@ -65,7 +76,7 @@ const state = reactive<any>({
 });
 
 const currentHeadMessage = ref<any>(null);
-const meesagesContent = ref<any>(null);
+const messagesContent = ref<any>(null);
 
 onMounted(() => {
     webSocket.assignMessageCallback(messageHandle);
@@ -182,6 +193,10 @@ function send() {
     sendMessage(currentHeadMessage.value);
 }
 
+function createdGroup(headMessage: any) {
+    state.headMessages.splice(0, 0, headMessage);
+}
+
 onBeforeUnmount(() => {
 
 });
@@ -222,6 +237,7 @@ onBeforeUnmount(() => {
     height: 50px;
     align-items: center;
     background-color: white;
+    box-sizing: border-box;
 }
 
 .head-message .nickname {
@@ -231,6 +247,7 @@ onBeforeUnmount(() => {
 
 .head-message .info {
     margin-left: 5px;
+    width: 100%;
 }
 
 .head-message .info .content {
@@ -238,6 +255,7 @@ onBeforeUnmount(() => {
     font-size: 13px;
     color: gray;
     text-align: left;
+    height: 20px;
 }
 
 #message .avatar {
@@ -362,10 +380,20 @@ onBeforeUnmount(() => {
     width: 10%;
 }
 
-#message .time {
+#message .messages .time {
     font-size: 11px;
     color: gray;
     width: 100%;
     text-align: center;
+}
+
+#message .head-message .time {
+    font-size: 12px;
+    color: gray;
+    margin-right: 5%;
+}
+
+#message .head-message:hover {
+    background-color: rgba(255, 249, 248, .5);
 }
 </style>

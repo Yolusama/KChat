@@ -21,3 +21,7 @@ export function UploadGroupAvatar(groupId:string,avatar:string,file:any,successC
     data.append("file",file);
     api.post(groupApiUrl(`/UploadAvatar/${groupId}`),authorization(true),data,successCallback);
 }
+
+export function SearchGroup(userId:string,identifier:string,successCallback:(res:Result)=>void){
+    api.get(groupApiUrl(`/SearchGroup/${userId}?identifier=${identifier}`),authorization(),successCallback);
+}

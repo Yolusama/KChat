@@ -36,7 +36,7 @@ import { onMounted, reactive, ref } from "vue";
 import { CreateLabel } from "../api/User";
 import stateStroge from "../modules/StateStorage";
 import { imgSrc } from "../modules/Request";
-import { MakeApply } from "../api/UserApply";
+import { MakeApply, MakeGroupApply } from "../api/UserApply";
 import { ElMessageBox, ElNotification } from "element-plus";
 
 const state = reactive<any>({
@@ -49,46 +49,60 @@ const state = reactive<any>({
   userId: "",
 });
 
-const emits = defineEmits(["close","update:labels"]);
+const emits = defineEmits(["close", "update:labels"]);
 
 const pros = defineProps({
-  group: Boolean,
+  isGroup: Boolean,
   name: String,
   avatar: String,
   contactId: String,
-  labels: Array
+  labels: Array,
+  groupOwnerId: String
 });
 
-const isGroup = ref<boolean>(pros.group);
+const isGroup = ref<boolean>(pros.isGroup);
 const name = ref(pros.name);
 const avatar = ref<any>(pros.avatar);
 const contactId = ref<any>(pros.contactId);
 const labels = ref<any>(pros.labels);
+const groupOwnerId = ref<any>(pros.groupOwnerId);
 
 onMounted(() => {
-  if (!isGroup.value) {
-    const user = stateStroge.get("user");
-
-    state.userId = user.id;
-  }
+  const user = stateStroge.get("user");
+  state.userId = user.id;
   state.labelId = labels.value[0].id;
 });
 
 function send() {
-  MakeApply(
-    {
+  if (!isGroup.value) {
+    MakeApply(
+      {
+        userId: state.userId,
+        contactId: contactId.value,
+        info: state.info,
+      },
+      (res) => {
+        ElNotification({
+          message: res.message,
+          type: "success",
+        });
+        state.show = false;
+      }
+    );
+  }
+  else {
+    MakeGroupApply(groupOwnerId.value, {
       userId: state.userId,
       contactId: contactId.value,
       info: state.info,
-    },
-    (res) => {
+    }, res => {
       ElNotification({
         message: res.message,
         type: "success",
       });
       state.show = false;
-    }
-  );
+    });
+  }
 }
 
 function addLabel() {

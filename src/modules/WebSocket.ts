@@ -20,11 +20,11 @@ const defaultOpenCallback = () => {
 const user = stateStroge.get("user");
 
 class KWebSocket {
-    private socket: WebSocket;
+    private socket: any = null;
     private closeCallback: (event: CloseEvent) => void = defaultCloseCallback;
 
     constructor() {
-        this.socket = this.assign();
+        this.assign();
     }
 
     assign() {
@@ -38,7 +38,7 @@ class KWebSocket {
             socket.onclose = null;
         };
         socket.onerror = defaultErrorCallback;
-        return socket;
+        this.socket = socket;
     }
 
     assignOpenCallback(callback: (event: Event) => void) {
@@ -70,6 +70,11 @@ class KWebSocket {
     close() {
         if (this.socket.readyState == this.socket.OPEN || this.socket.readyState == this.socket.CONNECTING)
             webSocket.close();
+    }
+
+    reconnect(){
+        this.close();
+        delayToRun(()=>this.assign(),15);
     }
 }
 

@@ -1,10 +1,10 @@
 import { ElMessageBox, type MessageBoxData, ElLoading } from "element-plus";
-import { type NavigationGuardNext,type RouteLocationNormalizedGeneric } from "vue-router";
+import { type NavigationGuardNext, type RouteLocationNormalizedGeneric } from "vue-router";
 import { Route } from "./Route";
 
 
 export function confirmDialog(title: string, content: string, confirmButtonText: string, cancelButtonText: string,
-    successCallback: (res: MessageBoxData) => void, failCallback:()=>void = () => { return; }) {
+    successCallback: (res: MessageBoxData) => void, failCallback: () => void = () => { return; }) {
     ElMessageBox.confirm(
         content,
         title,
@@ -80,7 +80,7 @@ export function getTimeStr(date: Date) {
         ` ${withZeroStr(date.getHours())}:${withZeroStr(date.getMinutes())}`;
 }
 
-export function swapArrayItem(array:any[], index1:number, index2:number) {
+export function swapArrayItem(array: any[], index1: number, index2: number) {
     const temp = array[index1];
     array[index1] = array[index2];
     array[index2] = temp;
@@ -89,63 +89,70 @@ export function swapArrayItem(array:any[], index1:number, index2:number) {
 export const oneSecond = 1000;
 
 export type HeadMessage = {
-    userId:string,
-    contactId:string,
-    content:string,
-    time:Date
+    userId: string,
+    contactId: string,
+    content: string,
+    time: Date
 }
 
-export interface ChatMessage{
-    userId:string,
-    contactId:string,
-    content:string,
-    time:Date,
-    type:Number,
-    fileName?:string,
-    fileSize?:number
+export interface ChatMessage {
+    userId: string,
+    contactId: string,
+    content: string,
+    time: Date,
+    type: Number,
+    fileName?: string,
+    fileSize?: number
 }
 
 export const MessageType = {
-   common:1,
-   image:2,
-   file:3
+    common: 1,
+    image: 2,
+    file: 3
 }
 
-export class PageOption{
-    public current:number;
-    public size:number;
-    public total:number;
-    public data:Array<any>|Record<string,any>;
-    constructor(current:number,size:number,data:Array<any>|Record<string,any>){
+export class PageOption {
+    public current: number;
+    public size: number;
+    public total: number;
+    public data: Array<any> | Record<string, any>;
+    constructor(current: number, size: number, data: Array<any> | Record<string, any>) {
         this.current = current;
         this.size = size;
         this.total = 0;
         this.data = data;
     }
-    count(){
-        return Math.ceil(this.total/this.size);
+    count() {
+        return Math.ceil(this.total / this.size);
     }
 }
 
-export enum UserApplyStatus{
-    Verifying = 1,Accepted = 2,Ignored,Refused
+export enum UserApplyStatus {
+    Verifying = 1, Accepted = 2, Ignored, Refused
 }
 
-export enum GroupContactStatus{
-    KickOut = 2,Dismissed = 3
+export enum GroupContactStatus {
+    KickOut = 2, Dismissed = 3
 }
 
-export const GroupSizes = [20,50,100,200,500,1000,1500,2000];
-export const DefaultGroupAvatar = "default-group.png";
+export const GroupSizes = [20, 50, 100, 200, 500, 1000, 1500, 2000];
+export const DefaultGroupAvatar = "default-group.jpg";
 
-export function previewOpenFile(file:any,func:(reuslt:any)=>void)
-{
-  if (file) {
-    var reader = new FileReader();
+export function previewOpenFile(file: any, func: (reuslt: any) => void) {
+    if (file) {
+        var reader = new FileReader();
 
-    reader.onload = function (e:any) {
-      func(e.target.result);
-    };
-    reader.readAsDataURL(file);
-  } 
+        reader.onload = function (e: any) {
+            func(e.target.result);
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+export function timeWithoutSeconds(date: Date) {
+    function withZeroStr(num: number): string {
+        return num >= 10 ? num.toString() : "0" + num;
+    }
+
+    return `${withZeroStr(date.getHours())}:${withZeroStr(date.getMinutes())}`;
 }

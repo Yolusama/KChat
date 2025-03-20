@@ -17,7 +17,7 @@
                         </el-icon>
                     </span>
                     <span class="signature text-overflow"><span class="intro">个性签名&nbsp;</span>{{ state.data.signature
-                        }}1</span>
+                        }}</span>
                     <span style="font-size:14px"><span class="intro">账号&nbsp;</span>{{ state.data.account }}</span>
                     <span style="font-size:14px"><span class="intro">电子邮箱&nbsp;</span>{{ state.data.email }}</span>
                     <span><span class="intro">地区&nbsp;</span>{{ state.data.area }}</span>
@@ -28,18 +28,31 @@
         </div>
         <div class="content no-drag" v-if="state.data != null && state.data.id.includes('G')">
             <div>
-                <div>
+                <div class="info">
                     <img :src="imgSrc(state.data.avatar)" class="avatar" />
-                    <span>{{ state.data.name }}</span>
+                    <div style="display:flex;flex-direction: column;width:90%">
+                        <span class="name">
+                            群名称
+                            {{ state.data.name }}
+                        </span>
+                        <span class="signature"><el-icon>
+                                <User />
+                            </el-icon> {{ state.data.currentCount }}/{{ state.data.size }}</span>
+                    </div>
                 </div>
-                <span class="signature text-overflow">{{ state.data.currentCount }}/{{ state.data.size }}</span>
+                <div style="margin:2% 0">
+                    <span>群描述信息：</span>
+                    <el-input v-model="state.data.description" :disabled="true" resize="none" :rows="3"
+                        type="textarea"></el-input>
+                </div>
             </div>
-            <el-button type="warning" size="small" v-if="!state.data.isGroup">加入</el-button>
+            <el-button type="warning" size="small" v-if="!state.data.userJoined || state.data.ownerId != state.userId"
+                @click="toJoinGroup">加入</el-button>
             <el-button size="small" v-else>发送消息</el-button>
         </div>
         <apply-dialog :isGroup="state.data.id.includes('G')" v-if="state.show" ref="apply" :contactId="state.data.id"
             :name="state.data.id.includes('G') ? state.data.name : state.data.nickname" v-model:labels="state.labels"
-            :avatar="state.data.avatar" @close="state.show = false"></apply-dialog>
+            :groupOwnerId="state.data.ownerId" :avatar="state.data.avatar" @close="state.show = false"></apply-dialog>
     </div>
 </template>
 
@@ -50,6 +63,7 @@ import { GetUserLabels, MakeFriends, SearchUser } from '../api/User';
 import stateStroge from '../modules/StateStorage';
 import { ElMessage } from 'element-plus';
 import { nextTick } from 'process';
+import { SearchGroup } from '../api/UserGroup';
 
 const state = reactive<any>({
     identifier: "",
@@ -74,8 +88,17 @@ onMounted(() => {
 function search() {
     if (state.identifier.trim().length == 0) return;
     SearchUser(state.userId, state.identifier, res => {
-        state.data = res.data;
+        const result = res.data;
+        if (result == null) {
+            SearchGroup(state.userId, state.identifier, res1 => {
+                state.data = res1.data;
+            });
+        }
+        else
+            state.data = result;
     });
+
+
 }
 
 function enterToSearch(e: globalThis.KeyboardEvent) {
@@ -97,6 +120,26 @@ function toAddFriend() {
         }, () => {
             ElMessage({
                 message: "已添加为好友...",
+                type: "success"
+            });
+        });
+    }
+    else {
+        state.show = true;
+        nextTick(() => {
+            apply.value.open();
+        });
+    }
+}
+
+function toJoinGroup() {
+    if (state.data.acceptMode == 2) {
+        MakeFriends({
+            userId: state.userId,
+            contactId: state.constactId
+        }, () => {
+            ElMessage({
+                message: "已加入群聊...",
                 type: "success"
             });
         });

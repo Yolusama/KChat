@@ -24,9 +24,12 @@
                   <el-image :src="imgSrc(apply.userAvatar)" :preview-src-list="[imgSrc(apply.userAvatar)]"
                      :preview-teleported="true" v-else></el-image>
                   <div style="display:flex;flex-direction:column">
-                     <span class="text-overflow name">{{ state.userId == apply.userId ? apply.contactName :
-                        apply.userName
-                     }}</span>
+                     <div style="display:flex">
+                        <span class="text-overflow name">{{ state.userId == apply.userId ? apply.contactName :
+                           apply.userName
+                        }}</span>
+                        <span class="time">{{ new Date(apply.time).toLocaleString() }}</span>
+                     </div>
                      <span v-if="apply.info != null" class="apply-info text-overflow">{{ apply.info }}</span>
                   </div>
                </div>
@@ -34,7 +37,7 @@
                   getApplyStatusText(apply)
                }}</span>
                <el-dropdown v-if="apply.status == 1 && state.userId == apply.contactId" split-button size="small">
-                  <el-text type="success" @click="state.labelShow=true;state.selectedApply=apply;">同意</el-text>
+                  <el-text type="success" @click="state.labelShow = true; state.selectedApply = apply;">同意</el-text>
                   <template #dropdown>
                      <el-dropdown-menu>
                         <el-dropdown-item> <el-button type="danger" size="small"
@@ -49,20 +52,32 @@
             </div>
          </div>
          <div class="user-apply" v-if="state.showGroupNotice">
-            <div class="item" v-for="apply in state.data" :key="apply.groupId">
+            <div class="item" v-for="apply in state.data" :key="apply.groupId" style="height:fit-content">
                <div class="info">
-                  <el-image :src="imgSrc(apply.groupAvatar)"></el-image>
-                  <div style="display:flex;flex-direction:column">
-                     <span class="text-overflow name">{{ apply.groupName }}</span>
-                     <span v-if="apply.info != null" class="text-overflow apply-info">{{ apply.info }}</span>
+                  <el-image :src="imgSrc(apply.contactAvatar)"></el-image>
+                  <div style="display:flex;flex-direction: column;">
+                     <div style="display:flex">
+                        <span class="text-overflow name">{{ apply.contactName }}</span>
+                        <span class="time">{{ new Date(apply.time).toLocaleString() }}</span>
+                     </div>
+                     <span v-if="apply.info != null" class="text-overflow apply-info">
+                        {{ apply.info }}
+                     </span>
+                     <div class="user-contact"> <span class="apply-in">申请加入群</span>
+                        <el-image style="width: 25px; height: 25px;border-radius:50% "
+                           :src="imgSrc(apply.groupAvatar)"></el-image>
+                        <span class="name no-drag">{{ apply.groupName }}</span>
+                     </div>
                   </div>
                </div>
-               <span v-if="apply.contactStatus == 1 && apply.status != 1" class="status-text">{{
-                  getApplyStatusText(apply)
-               }} </span>
-               <el-dropdown v-if="apply.contactStatus == 1 && apply.status == 1" split-button>
+               <span v-if="apply.contactStatus == 1 && (apply.status != 1 || apply.groupOwnerId != state.userId)"
+                  class="status-text">{{
+                     getApplyStatusText(apply)
+                  }} </span>
+               <el-dropdown v-if="apply.contactStatus == 1 && apply.status == 1 && apply.groupOwnerId == state.userId"
+                  split-button class="no-drag" size="small">
+                  <el-text type="success" @click="aggreUserApply(apply)">同意</el-text>
                   <template #dropdown>
-                     <el-text type="success" @click="aggreUserApply(apply)">同意</el-text>
                      <el-dropdown-menu split-button size="small">
                         <el-dropdown-item> <el-button type="danger" size="small"
                               @click="refuseUserApply(apply)">拒绝</el-button>
@@ -78,17 +93,17 @@
             </div>
          </div>
       </div>
-      <el-dialog v-model="state.labelShow" @close="state.labelId = 0;state.selectedApply=null;">
+      <el-dialog v-model="state.labelShow" @close="state.labelId = 0; state.selectedApply = null;">
          <div style="width:30vw">
             <el-select v-model="state.labelId">
                <el-option v-for="item in state.labels" :key="item.id" :label="item.name" :value="item.id">
                </el-option>
             </el-select>
             <div @click="addLabel">
-            <el-icon>
-              <Plus />
-            </el-icon>添加分组
-          </div>
+               <el-icon>
+                  <Plus />
+               </el-icon>添加分组
+            </div>
             <el-button type="primary" @click="aggreUserApply(state.selectedApply)">确定</el-button>
             <el-button type="info" @click="state.labelShow = false">取消</el-button>
          </div>
@@ -101,7 +116,7 @@ import { onMounted, reactive } from 'vue';
 import { GetGroupApplies, GetUserApplies, RemoveContactorCache, SetApplyStatus } from '../api/UserApply';
 import stateStroge from '../modules/StateStorage';
 import { imgSrc } from '../modules/Request';
-import { copy, GroupContactStatus, UserApplyStatus, type HeadMessage } from '../modules/Common';
+import { copy, delayToRun, GroupContactStatus, UserApplyStatus, type HeadMessage } from '../modules/Common';
 import webSocket from '../modules/WebSocket';
 import { CreateLabel, GetUserLabels, IsUserOnline } from '../api/User';
 import { CreateHeadMessage, CreateMessage, CreateOfflineMessage, FreshHeadMessage } from '../api/ChatMessage';
@@ -122,7 +137,7 @@ const state = reactive<any>({
    labelId: 0,
    labelShow: false,
    labels: [],
-   selectedApply:null
+   selectedApply: null
 });
 
 onMounted(() => {
@@ -188,26 +203,53 @@ function loadGroupNotices() {
 
 function modelFromApply(apply: any) {
    const model: Record<string, any> = {};
-   copy(apply, model);
+   if (state.showUserApply) {
+      copy(apply, model);
+      model.contactLabelId = state.labelId;
+   }
+   if (state.showGroupNotice) {
+      model.userId = apply.contactId;
+      model.contactId = apply.groupId;
+      model.groupOwnerId = apply.groupOwnerId;
+      model.info = apply.info;
+   }
    return model;
 }
 
 function aggreUserApply(apply: any) {
    const model = modelFromApply(apply);
    model.status = UserApplyStatus.Accepted;
-   model.contactLabelId = state.labelId;
-   const idTo = apply.userId == state.userId ? apply.contactId : apply.userId;
+   let idTo: any;
+   if (state.showUserApply)
+      idTo = apply.userId == state.userId ? apply.contactId : apply.userId;
+   if (state.showGroupNotice)
+      idTo = apply.groupId;
    SetApplyStatus(model, () => {
       apply.status = model.status;
-      const message = {
-         userId: state.userId,
-         contactId: idTo,
-         content: apply.info,
-         time: new Date(),
-         type: 1,
-         contactAvatar: apply.contactAvatar,
-         contactName: apply.contactName
-      };
+      let message: Record<string, any>;
+      if (state.showUserApply) {
+         message = {
+            userId: state.userId,
+            contactId: idTo,
+            content: apply.info,
+            time: new Date(),
+            type: 1,
+            contactAvatar: apply.contactAvatar,
+            contactName: apply.contactName
+         };
+      }
+      if (state.showGroupNotice)
+         {
+            idTo = apply.groupOwnerId;
+            message = {
+               userId: apply.contactId,
+               contactId: apply.groupId,
+               content:apply.info,
+               time:new Date(),
+               contactAvatar: apply.groupAvatar,
+               contactName: apply.groupName
+            };
+         }
       IsUserOnline(idTo, res => {
          if (res.data)
             CreateMessage(message, () => {
@@ -218,13 +260,19 @@ function aggreUserApply(apply: any) {
                   content: apply.info,
                   contactAvatar: apply.contactAvatar,
                   contactName: apply.contactName
-               }, () => RemoveContactorCache(idTo, true, () => sendApplyMessage(apply))
-               );
+               }, () => {
+                  if (state.showGroupNotice) {
+                     webSocket.reconnect();
+                     delayToRun(() => RemoveContactorCache(idTo, true, () => sendApplyMessage(apply)), 50);
+                  }
+                  if (state.showUserApply)
+                     RemoveContactorCache(idTo, true, () => sendApplyMessage(apply))
+               });
             });
          else
             CreateOfflineMessage(message);
       });
-      if(state.selectedApply!=null)
+      if (state.selectedApply != null)
          state.labelShow = false;
    });
 }
@@ -280,20 +328,20 @@ function sendApplyMessage(apply: any) {
 }
 
 function addLabel() {
-  ElMessageBox.prompt("新建分组", {
-    confirmButtonText: "确定",
-    cancelButtonText: "取消",
-  })
-    .then((value) => {
-      CreateLabel(state.userId, value, (res) => {
-        const index = state.labels.findIndex((l: any) => l.id == res.data.id);
-        if (index < 0) 
-          state.labels.push(res.data);
+   ElMessageBox.prompt("新建分组", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+   })
+      .then((value) => {
+         CreateLabel(state.userId, value, (res) => {
+            const index = state.labels.findIndex((l: any) => l.id == res.data.id);
+            if (index < 0)
+               state.labels.push(res.data);
+         });
+      })
+      .catch(() => {
+         return;
       });
-    })
-    .catch(() => {
-      return;
-    });
 }
 </script>
 
@@ -349,6 +397,7 @@ function addLabel() {
 #contactors .user-apply .item {
    display: flex;
    align-items: center;
+   position: relative;
    justify-content: space-between;
    padding: 1%;
    height: 50px;
@@ -369,13 +418,14 @@ function addLabel() {
 
 .user-apply .item .name {
    font-size: 14px;
-   width: 100%;
+   width: 60px;
 }
 
 .user-apply .item .apply-info {
    font-size: 13px;
    color: gray;
    width: 100%;
+   text-align: left;
 }
 
 .user-apply .item .info .el-image {
@@ -388,5 +438,34 @@ function addLabel() {
 .user-apply .item .status-text {
    color: gray;
    font-size: 13px;
+   position: absolute;
+   right: 5%;
+}
+
+.user-apply .item .time {
+   font-size: 13px;
+   color: gray;
+   width: 88px;
+   text-wrap: nowrap;
+   margin-left: 10%;
+}
+
+.user-apply .user-contact {
+   display: flex;
+   align-items: center;
+}
+
+.user-apply .user-contact .apply-in {
+   display: block;
+   font-size: 13px;
+   margin-right: 2%;
+   text-wrap: nowrap;
+}
+
+.user-apply .item .user-contact .name {
+   text-align: left;
+   margin-left: 1%;
+   color: rgb(0, 125, 235);
+   cursor: pointer;
 }
 </style>

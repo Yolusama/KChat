@@ -27,3 +27,7 @@ export function SetApplyStatus(apply:Record<string,any>,successCallback:(res:Res
 export function RemoveContactorCache(userId:string,isUserApply:boolean,successCallback:(res:Result)=>void){
     api.post(applyApiUrl(`/RemoveContactorCache/${userId}?isUserApply=${isUserApply}`),authorization(),{},successCallback);
 }
+
+export function MakeGroupApply(groupOwnerId:string,apply:any,successCallback:(res:Result)=>void){
+    api.put(applyApiUrl(`/MakeGroupApply/${groupOwnerId}`),authorization(),apply,successCallback);
+}

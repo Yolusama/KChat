@@ -81,4 +81,10 @@ body{
 .el-image-viewer__canvas,.el-dropdown-menu{
   -webkit-app-region:no-drag;
 }
+
+.between{
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
 </style>

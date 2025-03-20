@@ -16,17 +16,21 @@
         </el-dropdown-menu>
       </template>
     </el-dropdown>
-    <el-dialog v-model="state.groupEditShow" @close="clearGroupModel">
-      <el-form label-position="right" label-width="80px">
+    <el-dialog v-model="state.groupEditShow" @close="clearGroupModel" class="no-drag">
+      <el-form label-position="right" label-width="auto" style="margin-top:15px">
         <el-form-item label="群名称">
           <el-input v-model="state.group.name"></el-input>
         </el-form-item>
         <el-form-item label="选择群头像">
-          <label for="upload">
-            <el-image :src="state.groupImgShow" :preview-src-list="[state.groupImgShow]"
-              :preview-teleported="true"></el-image>
+          <el-image :src="state.groupImgShow" :preview-src-list="[state.groupImgShow]"
+          :preview-teleported="true" style="height:70px;width:70px;border-radius: 50%;"></el-image>
+          <label for="upload" class="upload">
+             <el-icon><Plus></Plus></el-icon>
             <input type="file" id="upload" style="display:none" @change="selectFile" accept="image/*">
           </label>
+        </el-form-item>
+        <el-form-item label="群描述信息">
+           <el-input v-model="state.group.description" resize="none" :rows="3"></el-input>
         </el-form-item>
         <el-form-item label="群规模">
           <el-radio-group v-model="state.group.size" size="small">
@@ -36,8 +40,8 @@
         </el-form-item>
         <el-form-item label="接受模式">
           <el-radio-group v-model="state.group.acceptMode">
-            <el-radio label="无需申请直接加入" :value="1"></el-radio>
-            <el-radio label="需要群主同意才可加入" :value="2"></el-radio>
+            <el-radio label="无需申请直接加入" :value="2"></el-radio>
+            <el-radio label="需要群主同意才可加入" :value="1"></el-radio>
           </el-radio-group>
         </el-form-item>
         <el-button type="primary" plain @click="createGroup">创建</el-button>
@@ -57,22 +61,23 @@ import stateStroge from '../modules/StateStorage';
 import { CreateGroup, UploadGroupAvatar } from '../api/UserGroup';
 import { ElNotification } from 'element-plus';
 import { CreateHeadMessage } from '../api/ChatMessage';
-import { time } from 'console';
+import webSocket from '../modules/WebSocket';
 
 const state = reactive<any>({
   group: {
     name: "",
     size: 20,
-    acceptMode: 1,
+    acceptMode: 2,
     ownerId: "",
-    avatar: DefaultGroupAvatar
+    avatar: DefaultGroupAvatar,
+    description:""
   },
   groupEditShow: false,
   groupImgShow: "",
   selectedFile: null
 });
 const content = ref<string>();
-const emits = defineEmits(["search"]);
+const emits = defineEmits(["search","groupCreated"]);
 
 onMounted(() => {
   const user = stateStroge.get("user");
@@ -106,8 +111,9 @@ function selectFile(e: any) {
 function clearGroupModel() {
   state.group.name = "";
   state.group.size = 20;
-  state.group.acceptMode = 1;
+  state.group.acceptMode = 2;
   state.group.avatar = DefaultGroupAvatar;
+  state.group.description = "";
   state.groupImgShow = "";
   state.selectedFile = null;
 }
@@ -121,21 +127,28 @@ function createGroup() {
       });
     }
     else
-     created(res.data);
+      created(res.data);
   });
 
-  function created(groupId:any){
-    CreateHeadMessage({
-          userId: state.group.ownerId,
-          contactId: groupId,
-          content: "",
-          time: new Date()
-        }, () => {
-          ElNotification({
-            message: "群组已创建！",
-            type: "success"
-          });
-        });
+  function created(groupId: any) {
+    const headMessage: any = {
+      userId: state.group.ownerId,
+      contactId: groupId,
+      content: "",
+      time: new Date(),
+      contactName:state.group.name,
+      contactAvatar:state.group.avatar
+    };
+    CreateHeadMessage(headMessage, (res) => {
+      headMessage.id = res.data;
+      ElNotification({
+        message: "群组已创建！",
+        type: "success"
+      });
+      emits("groupCreated",headMessage);
+      state.groupEditShow = false;
+      webSocket.reconnect();
+    });
   }
 }
 
@@ -159,5 +172,17 @@ function createGroup() {
   border-radius: 5px;
   height: 25px;
   width: 25px;
+}
+
+.search-com .upload{
+  margin-left: 3%;
+  height: 70px;
+  width: 70px;
+  font-size: 38px;
+  border: 2px dashed rgb(0,125,235);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color:darkgray;
 }
 </style>
