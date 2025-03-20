@@ -13,4 +13,5 @@ public class UserApplyModel {
     private Long labelId;
     private Long contactLabelId;
     private String info;
+    private String groupOwnerId;
 }

@@ -12,11 +12,11 @@
 
     <select id="getGroupApplies" resultType="KChat.Entity.VO.GroupApplyVO">
        select g.id as groupId,g.avatar as groupAvatar,g.name as groupName,ua.status,ua.info,ua.time,ua.id as applyId,
-              g.currentCount as groupMemberCount,g.size as groupSize,gc.status as contactStatus,u.id as applicantId,
-              u.nickName as applicantName,u.avatar as applicantAvatar
+              g.currentCount as groupMemberCount,g.size as groupSize,uc.status as contactStatus,u.id as contactId,
+              u.nickName as contactName,u.avatar as contactAvatar,g.ownerId as groupOwnerId
                  from UserGroup g join UserApply ua on g.id = ua.contactId
                      join User u on ua.userId = u.id
-                       left join GroupContact gc on g.id = gc.groupId
-                   where ua.userId = #{userId} or g.ownerId = #{userId} order by ua.time desc
+                      join UserContact uc on g.id = uc.contactId and ua.userId = uc.userId
+                   where ua.userId = #{userId} or g.ownerId = #{userId}  order by ua.time desc
     </select>
 </mapper>

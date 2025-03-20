@@ -4,6 +4,7 @@ import KChat.Annotation.ClearRedisCache;
 import KChat.Common.CachingKeys;
 import KChat.DbOption.Service.IUserGroupService;
 import KChat.DbOption.ServiceImpl.UserGroupService;
+import KChat.Entity.VO.GroupInfoVO;
 import KChat.Entity.VO.GroupVO;
 import KChat.Entity.VO.UserVO;
 import KChat.Model.UserGroupModel;
@@ -11,6 +12,7 @@ import KChat.Result.ActionResult;
 import KChat.Service.FileService;
 import KChat.Service.RedisCache;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -49,4 +51,15 @@ public class UserGroupController extends ControllerBase{
                 successWithData(groupService.getUserGroups(userId,redis))
         );
     }
+
+    @GetMapping("/SearchGroup/{userId}")
+    public CompletableFuture<ActionResult<GroupInfoVO>> SearchGroup(@PathVariable String userId,@RequestParam String identifier){
+        var res = groupService.searchGroup(userId,identifier);
+
+        if(res == null)
+            return CompletableFuture.completedFuture(fail(HttpStatus.NOT_FOUND));
+
+        return CompletableFuture.completedFuture(successWithData(res));
+    }
+
 }

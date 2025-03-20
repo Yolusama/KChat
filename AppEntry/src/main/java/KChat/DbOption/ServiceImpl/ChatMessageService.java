@@ -8,6 +8,7 @@ import KChat.Entity.ChatMessage;
 import KChat.Entity.HeadMessage;
 import KChat.Entity.VO.ChatMessageVO;
 import KChat.Entity.VO.HeadMessageVO;
+import KChat.Entity.VO.MsgUnReadVO;
 import KChat.Entity.VO.PagedData;
 import KChat.Model.ChatMessageModel;
 import KChat.Model.HeadMessageModel;
@@ -20,6 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ChatMessageService implements IChatMessageService {
@@ -64,10 +67,15 @@ public class ChatMessageService implements IChatMessageService {
     @Override
     public List<HeadMessageVO> getHeadMessages(String userId) {
         List<HeadMessageVO> messages = headMapper.getHeadMessages(userId);
-        List<Integer> counts = messageMapper.getUnReadCounts(userId);
-        for (int i = 0; i < messages.size(); i++)
-            messages.get(i).setUnReadCount(counts.get(i));
-        return messages;
+        var counts = messageMapper.getUnReadCounts(userId);
+        for(var countVO:counts){
+            Optional<HeadMessageVO> optional = messages.stream().filter(c->c.getId().equals(countVO.getHeadMessageId()))
+                    .findFirst();
+           if(!optional.isEmpty())
+               optional.get().setUnReadCount(countVO.getUnReadCount());
+        }
+        return messages.stream().sorted((h1,h2)->(int)(h2.getTime().getTime()-h1.getTime().getTime()))
+                .collect(Collectors.toList());
     }
 
     @Override

@@ -1,5 +1,6 @@
 package KChat.DbOption.Service;
 
+import KChat.Entity.VO.GroupInfoVO;
 import KChat.Entity.VO.GroupVO;
 import KChat.Model.UserGroupModel;
 import KChat.Service.FileService;
@@ -13,4 +14,5 @@ public interface IUserGroupService {
     List<GroupVO> getUserGroups(String userId,RedisCache redis);
     String createGroup(UserGroupModel model);
     String uploadAvatar(String groupId, String avatar, MultipartFile file, FileService fileService);
+    GroupInfoVO searchGroup(String userId, String identifier);
 }

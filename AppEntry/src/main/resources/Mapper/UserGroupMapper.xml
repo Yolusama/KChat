@@ -4,7 +4,12 @@
 <mapper namespace="KChat.DbOption.Mapper.UserGroupMapper">
     <select id="getGroups" resultType="KChat.Entity.VO.GroupVO">
         select g.name,g.id,g.avatar,g.owenerId from UserGroup g
-            join GroupContact gc on g.id = gc.groupId
-              where gc.userId = #{userId} and gc.status = 1
+            join UserContact uc on g.id = uc.contactId
+              where gc.userId = #{userId} and uc.status = 1
+    </select>
+
+    <select id="hasUserJoined" resultType="java.lang.Integer">
+        select count(1) from User u join UserContact uc on u.id = uc.userId
+        where uc.userId = #{userId} and uc.contactId = #{groupId}
     </select>
 </mapper>

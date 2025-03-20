@@ -50,4 +50,8 @@ public class UserGroup{
     * 更新时间
     */
     private Date updateTime;
+    /**
+     * 群描述信息
+     */
+    private String description;
 }

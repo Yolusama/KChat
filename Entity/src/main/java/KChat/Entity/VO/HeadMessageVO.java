@@ -1,5 +1,6 @@
 package KChat.Entity.VO;
 
+import KChat.Common.Constants;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,6 +14,6 @@ public class HeadMessageVO {
     private String contactId;
     private String contactName;
     private String contactAvatar;
-    private Integer unReadCount;
+    private Integer unReadCount = Constants.None;
     private Date time;
 }

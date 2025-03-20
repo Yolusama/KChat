@@ -20,4 +20,5 @@ public interface IUserService{
     UserVO searchUser(String userId,String identifier);
     Boolean isOnline(String userId);
     int goOffline(String userId);
+    String register();
 }

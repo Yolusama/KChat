@@ -11,9 +11,12 @@
 
     <select id="getHeadMessages" resultType="KChat.Entity.VO.HeadMessageVO">
       select hm.id,hm.content,hm.contactId,u.nickname as contactName,u.avatar as contactAvatar,hm.time
-      from User u join HeadMessage hm on u.id = hm.contactId
+        from User u join HeadMessage hm on u.id = hm.contactId
                  where hm.userId = #{userId}
-                     order by hm.time desc
+     union
+      select hm.id,hm.content,hm.contactId,g.name as contactName,g.avatar as contactAvatar,hm.time
+        from UserGroup g join HeadMessage hm on g.id = hm.contactId
+          where hm.userId = #{userId}
     </select>
 
 </mapper>

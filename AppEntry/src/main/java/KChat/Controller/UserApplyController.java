@@ -39,7 +39,7 @@ public class UserApplyController extends ControllerBase{
     }
 
     @PutMapping("/MakeApply")
-    @ClearRedisCache(keys = {CachingKeys.GetUserApplies,CachingKeys.GetGroupApplies})
+    @ClearRedisCache(keys = {CachingKeys.GetUserApplies})
     public ActionResult MakeApply(@RequestBody UserApplyModel model, HttpServletRequest request){
         applyService.makeApply(model,msgProducer);
         return ok("已发出好友申请！");
@@ -65,6 +65,13 @@ public class UserApplyController extends ControllerBase{
     public ActionResult RemoveContactorCache(@PathVariable String userId,@RequestParam Boolean isUserApply){
         applyService.removeContactorCache(userId,isUserApply,redis);
         return ok();
+    }
+
+    @PutMapping("/MakeGroupApply/{groupOwnerId}")
+    @ClearRedisCache(keys = {CachingKeys.GetGroupApplies})
+    public ActionResult MakeGroupApply(@PathVariable String groupOwnerId,@RequestBody UserApplyModel model, HttpServletRequest request){
+        applyService.makeGroupApply(groupOwnerId,model,msgProducer);
+        return ok("已发出加群申请！");
     }
 }
 

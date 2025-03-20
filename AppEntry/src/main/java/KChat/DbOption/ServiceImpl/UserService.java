@@ -147,6 +147,8 @@ public class UserService implements IUserService {
         wrapper.eq(User::getId,identifier).or().eq(User::getEmail,identifier).or()
                 .eq(User::getAccount,identifier);
         User user = mapper.selectOne(wrapper);
+        if(user == null)
+            return null;
         UserVO res = ObjectUtil.copy(user,new UserVO());
         res.setIsFriend(mapper.isFriend(userId,user.getId()).equals(Constants.NormalState));
         return res;
@@ -167,5 +169,22 @@ public class UserService implements IUserService {
         wrapper.eq(User::getId,userId).set(User::getOffline,true).
                 set(User::getLastOfflineTime,Constants.now());
         return mapper.update(wrapper);
+    }
+
+    @Override
+    public String register() {
+        User user = new User();
+        user.setId(RandomGenerator.generateUserId());
+        user.setAccount(RandomGenerator.generateUserAccount());
+        user.setGender(Constants.AbnormalState);
+        user.setPassword(StringEncryptUtil.getString("123456"));
+        user.setEmail(String.format("%s@email.com",RandomGenerator.generateWithTable(12)));
+        user.setNickname(String.format("用户%s",user.getId()));
+        user.setStatus(true);
+        user.setSignature(String.format("我是%s",user.getNickname()));
+        user.setCreateTime(Constants.now());
+        user.setRole(UserRole.COMMON.value());
+        mapper.insert(user);
+        return user.getAccount();
     }
 }

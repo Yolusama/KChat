@@ -33,7 +33,7 @@ public class RandomGenerator {
         Random random = new Random(System.currentTimeMillis());
         StringBuilder builder = new StringBuilder();
         for(int i=0;i<count;i++)
-            builder.append(random.nextInt(length));
+            builder.append(Table.charAt(random.nextInt(length)));
         return builder.toString();
     }
 
@@ -62,8 +62,7 @@ public class RandomGenerator {
         StringBuilder builder = new StringBuilder();
         builder.append(Constants.GroupIdPrefix);
         Random random = new Random(System.currentTimeMillis());
-        int bound = random.nextInt(8)
-                ;
+        int bound = random.nextInt(4) + 7;
         for(int i = 0;i < bound;i++)
             builder.append(random.nextInt(Bound));
         return builder.toString();

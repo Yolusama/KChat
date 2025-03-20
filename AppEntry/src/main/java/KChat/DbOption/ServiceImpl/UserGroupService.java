@@ -2,19 +2,22 @@ package KChat.DbOption.ServiceImpl;
 
 import KChat.Common.CachingKeys;
 import KChat.Common.Constants;
-import KChat.DbOption.Mapper.GroupContactMapper;
 import KChat.DbOption.Mapper.GroupNoticeMapper;
+import KChat.DbOption.Mapper.UserContactMapper;
 import KChat.DbOption.Mapper.UserGroupMapper;
 import KChat.DbOption.Service.IUserGroupService;
 import KChat.Entity.Enum.UserContactStatus;
-import KChat.Entity.GroupContact;
+import KChat.Entity.UserContact;
 import KChat.Entity.UserGroup;
+import KChat.Entity.VO.GroupInfoVO;
 import KChat.Entity.VO.GroupVO;
 import KChat.Functional.RandomGenerator;
 import KChat.Model.ArrayDataModel;
 import KChat.Model.UserGroupModel;
 import KChat.Service.FileService;
 import KChat.Service.RedisCache;
+import KChat.Utils.ObjectUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,13 +30,13 @@ import java.util.List;
 public class UserGroupService implements IUserGroupService {
     private final UserGroupMapper groupMapper;
     private final GroupNoticeMapper noticeMapper;
-    private final GroupContactMapper contactMapper;
+    private final UserContactMapper userContactMapper;
 
     @Autowired
-    public UserGroupService(UserGroupMapper groupMapper,GroupNoticeMapper noticeMapper,GroupContactMapper contactMapper){
+    public UserGroupService(UserGroupMapper groupMapper,GroupNoticeMapper noticeMapper,UserContactMapper userContactMapper){
         this.groupMapper = groupMapper;
         this.noticeMapper = noticeMapper;
-        this.contactMapper = contactMapper;
+        this.userContactMapper = userContactMapper;
     }
 
     @Override
@@ -74,30 +77,43 @@ public class UserGroupService implements IUserGroupService {
         group.setAcceptMode(model.getAcceptMode());
         group.setOwnerId(model.getOwnerId());
         group.setSize(model.getSize());
+        group.setStatus(UserContactStatus.NORMAL.value());
         group.setAvatar(Constants.DefaultGroupAvatar);
         groupMapper.insert(group);
-        GroupContact contact = new GroupContact();
+        UserContact contact = new UserContact();
         contact.setUserId(model.getOwnerId());
-        contact.setGroupId(group.getId());
+        contact.setContactId(group.getId());
         contact.setCreateTime(group.getCreateTime());
         contact.setStatus(UserContactStatus.NORMAL.value());
-        contactMapper.insert(contact);
+        userContactMapper.insert(contact);
         return group.getId();
     }
 
     @Override
     @Transactional
     public String uploadAvatar(String groupId, String avatar, MultipartFile file, FileService fileService) {
-        LambdaUpdateWrapper<UserGroup> wrapper = new LambdaUpdateWrapper<>();
-        wrapper.eq(UserGroup::getId,groupId);
-        String res = Constants.DefaultGroupAvatar;
         if(!avatar.equals(Constants.DefaultGroupAvatar))
         {
+            fileService.removeImage(avatar);
+            LambdaUpdateWrapper<UserGroup> wrapper = new LambdaUpdateWrapper<>();
+            wrapper.eq(UserGroup::getId,groupId);
             String newFileName = fileService.uploadImage(file);
             wrapper.set(UserGroup::getAvatar,newFileName).set(UserGroup::getUpdateTime,Constants.now());
-            res = newFileName;
+            groupMapper.update(wrapper);
+            return newFileName;
         }
-        groupMapper.update(wrapper);
+        return Constants.DefaultGroupAvatar;
+    }
+
+    @Override
+    public GroupInfoVO searchGroup(String userId,String identifier) {
+        LambdaQueryWrapper<UserGroup> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserGroup::getId,identifier);
+        UserGroup group = groupMapper.selectOne(wrapper);
+        if(group == null)
+            return null;
+        var res = ObjectUtil.copy(group,new GroupInfoVO());
+        res.setUserJoined(groupMapper.hasUserJoined(userId,res.getId()).equals(Constants.NormalState));
         return res;
     }
 }

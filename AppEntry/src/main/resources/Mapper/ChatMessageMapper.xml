@@ -17,10 +17,16 @@
                order by cm.time
     </select>
 
-    <select id="getUnReadCounts" resultType="java.lang.Integer">
-        select count(1) from ChatMessage cm
-                join HeadMessage hm on cm.userId = hm.userId and cm.contactId = hm.contactId
+    <select id="getUnReadCounts" resultType="KChat.Entity.VO.MsgUnReadVO">
+        select hm.id as headMessageId,count(1) as unReadCount from HeadMessage hm
+            left join ChatMessage cm on hm.userId = cm.contactId and hm.contactId = cm.userId
         where cm.handled = 0 and hm.userId = #{userId}
-            order by hm.time desc
+        group by hm.id
+        union
+        select hm.id as headMessageId,count(1) as unReadCount from HeadMessage hm
+            left join ChatMessage cm on hm.userId = cm.userId
+        where cm.handled = 0 and hm.userId = #{userId}
+          and cm.contactId like 'G%'
+        group by hm.id
     </select>
 </mapper>

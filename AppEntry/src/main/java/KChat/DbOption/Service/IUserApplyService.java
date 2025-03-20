@@ -13,6 +13,7 @@ public interface IUserApplyService {
     List<UserApplyVO> getUserApplies(String userId, RedisCache redis);
     List<GroupApplyVO> getGroupApplies(String userId,RedisCache redis);
     void makeApply(UserApplyModel model, MQMsgProducer msgProducer);
+    void makeGroupApply(String groupOwnerId, UserApplyModel model,MQMsgProducer msgProducer);
     int setApplyStatus(UserApplyModel model,MQMsgProducer msgProducer);
     void removeContactorCache(String userId,Boolean isUserApply,RedisCache redis);
 }

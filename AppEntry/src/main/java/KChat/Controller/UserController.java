@@ -111,8 +111,9 @@ public class UserController extends ControllerBase{
 
     @GetMapping("/SearchUser/{userId}")
     public CompletableFuture<ActionResult<UserVO>> SearchUser(@PathVariable String userId,@RequestParam String identifier){
+        var res = userService.searchUser(userId,identifier);
         return CompletableFuture.completedFuture(
-                successWithData(userService.searchUser(userId,identifier))
+                successWithData(res)
         );
     }
 
@@ -150,5 +151,10 @@ public class UserController extends ControllerBase{
         if(res == Constants.AbnormalState)
             return fail();
         return ok("已下线!");
+    }
+
+    @RequestMapping("/TestRegister")
+    public ActionResult<String> TestRegister(){
+        return successWithData(userService.register());
     }
 }
