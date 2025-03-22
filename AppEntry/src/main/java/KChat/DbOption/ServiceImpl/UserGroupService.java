@@ -14,11 +14,14 @@ import KChat.Entity.VO.GroupVO;
 import KChat.Functional.RandomGenerator;
 import KChat.Model.ArrayDataModel;
 import KChat.Model.UserGroupModel;
+import KChat.NettyServer;
 import KChat.Service.FileService;
 import KChat.Service.RedisCache;
 import KChat.Utils.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.util.concurrent.GlobalEventExecutor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -86,6 +89,9 @@ public class UserGroupService implements IUserGroupService {
         contact.setCreateTime(group.getCreateTime());
         contact.setStatus(UserContactStatus.NORMAL.value());
         userContactMapper.insert(contact);
+        var channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+        channelGroup.add(NettyServer.UserChannels.get(model.getOwnerId()));
+        NettyServer.GroupChannels.put(group.getId(),channelGroup);
         return group.getId();
     }
 

@@ -13,6 +13,7 @@ import KChat.Entity.VO.GroupApplyVO;
 import KChat.Entity.VO.UserApplyVO;
 import KChat.Model.ArrayDataModel;
 import KChat.Model.UserApplyModel;
+import KChat.NettyServer;
 import KChat.Service.MQMsgProducer;
 import KChat.Service.RedisCache;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -122,6 +123,9 @@ public class UserApplyService implements IUserApplyService {
                 contact.setCreateTime(Constants.now());
                 userContactMapper.insert(contact);
                 apply.setContactId(model.getUserId());
+                NettyServer.GroupChannels.get(model.getContactId()).add(
+                        NettyServer.UserChannels.get(model.getUserId())
+                );
             }
             wrapper.set(UserApply::getStatus,UserApplyStatus.ACCEPTED.value());
             msgProducer.produceAndSend(apply);

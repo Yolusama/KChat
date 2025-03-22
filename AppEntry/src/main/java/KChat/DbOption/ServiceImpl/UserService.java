@@ -178,6 +178,7 @@ public class UserService implements IUserService {
         user.setAccount(RandomGenerator.generateUserAccount());
         user.setGender(Constants.AbnormalState);
         user.setPassword(StringEncryptUtil.getString("123456"));
+        user.setAvatar(Constants.DefaultUserAvatar);
         user.setEmail(String.format("%s@email.com",RandomGenerator.generateWithTable(12)));
         user.setNickname(String.format("用户%s",user.getId()));
         user.setStatus(true);

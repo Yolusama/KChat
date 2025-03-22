@@ -64,7 +64,7 @@ public class NettyChannelConfig {
                 return;
             }
             for(String groupId:groupIds){
-                if(!NettyServer.GroupChannels.containsKey(key)){
+                if(!NettyServer.GroupChannels.containsKey(groupId)){
                     ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
                     channelGroup.add(channel);
                     NettyServer.GroupChannels.put(groupId,channelGroup);

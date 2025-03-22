@@ -1,5 +1,6 @@
 package KChat.DbOption.ServiceImpl;
 
+import KChat.Common.Constants;
 import KChat.DbOption.Mapper.ChatMessageMapper;
 import KChat.DbOption.Mapper.HeadMessageMapper;
 import KChat.DbOption.Mapper.UserApplyMapper;
@@ -81,8 +82,12 @@ public class ChatMessageService implements IChatMessageService {
     @Override
     public PagedData<ChatMessageVO> getChatMessages(Integer page, Integer pageSize, String userId, String contactId) {
         Page<ChatMessageVO> pageRes = Page.of(page,pageSize);
-        var data = messageMapper.getChatMessages(pageRes,userId,contactId);
-        return new PagedData<>(data, pageRes.getTotal());
+        List<ChatMessageVO> data;
+        if(contactId.indexOf(Constants.GroupIdPrefix)>=Constants.None)
+            data = messageMapper.getGroupMessages(pageRes,userId,contactId);
+        else
+            data = messageMapper.getChatMessages(pageRes,userId,contactId);
+        return new PagedData<>(data,pageRes.getTotal());
     }
 
     @Override

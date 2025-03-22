@@ -13,5 +13,7 @@ import java.util.List;
 public interface ChatMessageMapper extends BaseMapper<ChatMessage> {
     List<ChatMessageVO> getChatMessages(Page<ChatMessageVO> page, @Param("userId")String userId,
                                         @Param("contactId")String contactId);
+    List<ChatMessageVO> getGroupMessages(Page<ChatMessageVO> page, @Param("userId")String userId,
+                                        @Param("groupId")String groupId);
     List<MsgUnReadVO> getUnReadCounts(@Param("userId")String userId);
 }
