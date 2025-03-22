@@ -14,8 +14,7 @@
                             'color:white' : ''">{{ timeWithoutSeconds(new Date(message.time)) }}</span>
                     </div>
                     <div class="between">
-                        <span class="text-overflow content" 
-                        :style="currentHeadMessage != null && currentHeadMessage.id == message.id ?
+                        <span class="text-overflow content" :style="currentHeadMessage != null && currentHeadMessage.id == message.id ?
                             'color:white' : ''">{{ message.content }}</span>
                     </div>
                 </div>
@@ -28,7 +27,7 @@
             <div class="head">
                 {{ currentHeadMessage.contactName }}
             </div>
-            <el-scrollbar style="height:60%">
+            <el-scrollbar style="height:60%;padding-right: 2%;" class="no-drag">
                 <div class="message" v-for="message in msgPageOpt.data" :key="message.id" ref="messagesContent">
                     <div class="content user" v-if="message.userId == state.user.id && !isGroupMsg(message.contactId)">
                         <span class="time">{{ new Date(message.time).toLocaleString() }}</span>
@@ -45,6 +44,22 @@
                             <img :src="imgSrc(message.contactAvatar)" class="avatar">
                             <div class="message-body" v-html="message.content">
                             </div>
+                        </div>
+                    </div>
+                    <div class="content group-user"
+                        v-if="message.userId == state.user.id && isGroupMsg(message.contactId)">
+                        <div class="group-user-self">
+                            <span class="nickname text-overflow">{{ state.user.nickname }}</span>
+                            <div class="message-body" v-html="message.content"></div>
+                        </div>
+                        <img :src="imgSrc(state.user.avatar)" class="avatar">
+                    </div>
+                    <div class="content group-contactor"
+                        v-if="message.userId != state.user.id && isGroupMsg(message.contactId)">
+                        <img :src="imgSrc(state.user.avatar)" class="avatar">
+                        <div class="group-contactor-self">
+                            <span class="nickname text-overflow">{{ message.contactName }}</span>
+                            <div class="message-body" v-html="message.content"></div>
                         </div>
                     </div>
                 </div>
@@ -90,10 +105,14 @@ const msgPageOpt = ref<PageOption>(new PageOption(1, 15, []));
 
 function messageHandle(event: MessageEvent<any>) {
     const msg = JSON.parse(event.data);
-    if (currentHeadMessage.value != null && currentHeadMessage.value.contactId == msg.userId) {
+    console.log(msg);
+    if (currentHeadMessage.value != null && (currentHeadMessage.value.contactId == msg.userId ||
+        currentHeadMessage.value.contactId == msg.contactId)) {
         const { contactName, contactAvatar } = currentHeadMessage.value;
-        msg.contactName = contactName;
-        msg.contactAvatar = contactAvatar;
+        if (!isGroupMsg(msg.contactId)) {
+            msg.contactName = contactName;
+            msg.contactAvatar = contactAvatar;
+        }
         if (msgPageOpt.value.data.length >= msgPageOpt.value.size) {
             msgPageOpt.value.data.splice(0, 1);
             msgPageOpt.value.data.push(msg);
@@ -103,8 +122,10 @@ function messageHandle(event: MessageEvent<any>) {
     }
     const toFresh: any = {};
     copy(msg, toFresh);
-    toFresh.userId = msg.contactId;
-    toFresh.contactId = msg.userId;
+    if (!isGroupMsg(msg.contactId)) {
+        toFresh.userId = msg.contactId;
+        toFresh.contactId = msg.userId;
+    }
     freshHeadMessage(toFresh);
 }
 
@@ -122,15 +143,17 @@ function sendMessage(headMessage: any) {
     webSocket.sendMessage(message, () => {
         CreateMessage(message, res => {
             const data = res.data;
-            message.id = data;
-            if (msgPageOpt.value.data.length >= msgPageOpt.value.size) {
-                msgPageOpt.value.data.splice(0, 1);
-                msgPageOpt.value.data.push(message);
+            if (!isGroupMsg(message.contactId)) {
+                message.id = data;
+                if (msgPageOpt.value.data.length >= msgPageOpt.value.size) {
+                    msgPageOpt.value.data.splice(0, 1);
+                    msgPageOpt.value.data.push(message);
+                }
+                else
+                    msgPageOpt.value.data.push(message);
+                freshHeadMessage(message);
             }
-            else
-                msgPageOpt.value.data.push(message);
             state.content = "";
-            freshHeadMessage(message);
         });
     });
 }
@@ -163,7 +186,12 @@ function freshHeadMessage(msg: any) {
     headMessage.time = new Date();
     FreshHeadMessage(headMessage, (res) => {
         const id = res.data;
-        const index: number = state.headMessages.findIndex((h: any) => h.id == id);
+        let index: number = state.headMessages.findIndex((h: any) => {
+            if (isGroupMsg(headMessage.contactId))
+                return h.contactId == headMessage.contactId;
+            else
+                return h.id == id
+        });
         if (index < 0) {
             headMessage.id = id;
             state.headMessages.splice(0, 0, headMessage);
@@ -309,15 +337,18 @@ onBeforeUnmount(() => {
     padding: 1%;
     width: fit-content;
     margin-top: 1%;
+    min-width: 20px;
 }
 
-.user .message-body {
+.user .message-body,
+.group-user .message-body {
     background: white;
     color: black;
     margin-right: 1%;
 }
 
-.contactor .message-body {
+.contactor .message-body,
+.group-contactor .message-body {
     background-color: rgb(0, 125, 225);
     color: white;
     margin-left: 1%;
@@ -374,7 +405,7 @@ onBeforeUnmount(() => {
     font-family: "SimSun", "STSong", "Microsoft YaHei ";
 }
 
-#message .user-info .nickname {
+#message .content .nickname {
     font-size: 13px;
     color: gray;
     width: 10%;
@@ -395,5 +426,47 @@ onBeforeUnmount(() => {
 
 #message .head-message:hover {
     background-color: rgba(255, 249, 248, .5);
+}
+
+#message .group-user,
+#message .group-contactor {
+    flex-direction: row;
+    width: 98%;
+}
+
+#message .group-user {
+    justify-content: flex-end;
+}
+
+#message .group-contactor {
+    justify-self: flex-start;
+}
+
+#message .group-user-self,
+#message .group-contactor-self {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+#message .group-user-self {
+    align-items: flex-end;
+    margin-right: 1%;
+}
+
+#message .group-contactor-self {
+    align-items: flex-start;
+    margin-left: 1%;
+}
+
+#message .group-contactor-self .nickname {
+    width: 30%;
+    text-align: left;
+    white-space: nowrap;
+}
+
+#message .group-user-self .nickname {
+    width: 30%;
+    text-align: right;
 }
 </style>

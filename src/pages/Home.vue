@@ -37,7 +37,7 @@ import stateStroge from '../modules/StateStorage';
 import { imgSrc } from '../modules/Request';
 import sse from '../modules/SSE';
 import { Route } from '../modules/Route';
-import type { HeadMessage } from '../modules/Common';
+import webSocket from '../modules/WebSocket';
 
 const user = ref<any>(null);
 const unreadOpt = ref<any>({
@@ -52,8 +52,14 @@ onMounted(() => {
   const stored = stateStroge.get("user");
   user.value = stored;
   ipcRenderer.send("userLogan", user.value.id, user.value.token);
+  sse.assign(user.value.id);
   sse.assignMessageCallback(messageCallback);
+  webSocket.assign(user.value.id,user.value.token);
   Route.dive("#/Home/Message");
+
+  /*ipcRenderer.invoke("testRead","src/modules/WebSocket.ts").then(data=>{
+      ipcRenderer.invoke("testWrite","src/test/ws.ts",data);
+  });*/
 });
 
 

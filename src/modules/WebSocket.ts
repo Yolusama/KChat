@@ -1,6 +1,5 @@
 import { ElNotification } from "element-plus";
 import { webSocketUrl } from "./Request";
-import stateStroge from "./StateStorage";
 import { delayToRun } from "./Common";
 
 const defaultErrorCallback = () => {
@@ -17,18 +16,24 @@ const defaultCloseCallback = () => {
 const defaultOpenCallback = () => {
     console.log("WebSocket已打开...");
 }
-const user = stateStroge.get("user");
 
 class KWebSocket {
     private socket: any = null;
     private closeCallback: (event: CloseEvent) => void = defaultCloseCallback;
+    private user: any = null;
 
     constructor() {
-        this.assign();
+
     }
 
-    assign() {
-        const socket = new WebSocket(`${webSocketUrl}?userId=${user.id}&token=${user.token}`);
+    assign(userId: string, token: string) {
+        if (this.user == null) {
+            this.user = {
+                id: userId,
+                token: token
+            };
+        }
+        const socket = new WebSocket(`${webSocketUrl}?userId=${userId}&token=${token}`);
         socket.onopen = defaultOpenCallback;
         socket.onclose = (event) => {
             this.closeCallback(event);
@@ -53,7 +58,7 @@ class KWebSocket {
         this.socket.onerror = callback;
     }
 
-    assignMessageCallback(callback:(event:MessageEvent<any>)=>void){
+    assignMessageCallback(callback: (event: MessageEvent<any>) => void) {
         this.socket.onmessage = callback;
     }
 
@@ -66,15 +71,15 @@ class KWebSocket {
             console.log(e);
         }
     }
-    
+
     close() {
         if (this.socket.readyState == this.socket.OPEN || this.socket.readyState == this.socket.CONNECTING)
-            webSocket.close();
+            this.socket.close();
     }
 
-    reconnect(){
+    reconnect() {
         this.close();
-        delayToRun(()=>this.assign(),15);
+        delayToRun(() => this.assign(this.user.id, this.user.token), 15);
     }
 }
 

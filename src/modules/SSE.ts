@@ -1,15 +1,17 @@
-import stateStroge from "./StateStorage"
 
-const user = stateStroge.get("user");
 
 const defaultOpenCallback = () => {
     console.log("SSE开启...")
 };
 
 class SSE {
-    private sse: EventSource;
+    private sse: any;
     constructor() {
-        const sse = new EventSource(`http://localhost:5725/Api/Common/SSE/${user.id}`);
+        
+    }
+
+    assign(userId:string){
+        const sse = new EventSource(`http://localhost:5725/Api/Common/SSE/${userId}`);
         sse.onopen = defaultOpenCallback;
         sse.onerror = () => { }
         this.sse = sse;

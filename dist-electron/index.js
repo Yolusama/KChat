@@ -5,7 +5,7 @@ const require$$1$1 = require("path");
 const require$$3 = require("http");
 const require$$4 = require("https");
 const require$$0$1 = require("url");
-const require$$6 = require("fs");
+const fs = require("fs");
 const require$$4$1 = require("assert");
 const require$$1$2 = require("tty");
 const require$$0$2 = require("os");
@@ -4206,7 +4206,7 @@ function requireForm_data() {
   var http = require$$3;
   var https = require$$4;
   var parseUrl = require$$0$1.parse;
-  var fs = require$$6;
+  var fs$1 = fs;
   var Stream = stream.Stream;
   var mime = requireMimeTypes();
   var asynckit2 = requireAsynckit();
@@ -4272,7 +4272,7 @@ function requireForm_data() {
       if (value.end != void 0 && value.end != Infinity && value.start != void 0) {
         callback(null, value.end + 1 - (value.start ? value.start : 0));
       } else {
-        fs.stat(value.path, function(err, stat) {
+        fs$1.stat(value.path, function(err, stat) {
           var fileSize;
           if (err) {
             callback(err);
@@ -8558,6 +8558,7 @@ const {
   getAdapter,
   mergeConfig
 } = axios;
+const fileStorePath = "AppData";
 function processCorresponse(window2) {
   electron.ipcMain.on("minimize", () => {
     window2.minimize();
@@ -8585,6 +8586,47 @@ function processCorresponse(window2) {
       userId,
       token
     };
+  });
+}
+function handleRenderInvoke() {
+  electron.ipcMain.handle("writeFile", (event, account, fileName, content) => {
+    const pathToWrite = `${fileStorePath}/${account}/${fileName}`;
+    return new Promise((resolve, reject) => {
+      fs.writeFile(pathToWrite, content, {}, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  });
+  electron.ipcMain.handle("readFile", (event, account, fileName) => {
+    const pathToRead = `${fileStorePath}/${account}/${fileName}`;
+    return new Promise((resolve, reject) => {
+      fs.readFile(pathToRead, { encoding: "utf-8" }, (err, data) => {
+        if (err) reject(err);
+        else resolve(data);
+      });
+    });
+  });
+  electron.ipcMain.handle("testRead", (event, path) => {
+    return new Promise((resolve, reject) => {
+      fs.readFile(path, { encoding: "utf-8" }, (err, data) => {
+        if (err) reject(err);
+        else resolve(data);
+      });
+    });
+  });
+  electron.ipcMain.handle("testWrite", (event, path, content) => {
+    return new Promise((resolve, reject) => {
+      const index = path.lastIndexOf("/");
+      const dir = path.substring(0, index);
+      if (!fs.existsSync(dir))
+        fs.mkdir(dir, { recursive: true }, () => {
+        });
+      fs.writeFile(path, content, { flag: "w+" }, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
   });
 }
 function subWinCallback(subWin) {
@@ -8660,6 +8702,7 @@ const createWindow = () => {
     else
       subWin.loadURL("http://localhost:5435/#/Search");
   });
+  handleRenderInvoke();
   if (electron.app.isPackaged) {
     win.loadURL(`file://${__dirname}/index.html`);
   } else {

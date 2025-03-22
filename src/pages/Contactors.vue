@@ -254,16 +254,15 @@ function aggreUserApply(apply: any) {
          if (res.data)
             CreateMessage(message, () => {
                CreateHeadMessage({
-                  userId: state.userId,
-                  contactId: idTo,
+                  userId: message.userId,
+                  contactId: message.contactId,
                   time: message.time,
                   content: apply.info,
-                  contactAvatar: apply.contactAvatar,
-                  contactName: apply.contactName
+                  contactAvatar: message.contactAvatar,
+                  contactName: message.contactName
                }, () => {
                   if (state.showGroupNotice) {
-                     webSocket.reconnect();
-                     delayToRun(() => RemoveContactorCache(idTo, true, () => sendApplyMessage(apply)), 50);
+                     delayToRun(() => RemoveContactorCache(idTo, true, () => sendApplyMessage(apply)), 5);
                   }
                   if (state.showUserApply)
                      RemoveContactorCache(idTo, true, () => sendApplyMessage(apply))
