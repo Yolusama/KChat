@@ -10,12 +10,14 @@
     </insert>
 
     <select id="getHeadMessages" resultType="KChat.Entity.VO.HeadMessageVO">
-      select hm.id,hm.content,hm.contactId,u.nickname as contactName,u.avatar as contactAvatar,hm.time
+      select hm.id,hm.content,hm.contactId,u.nickname as contactName,u.avatar as contactAvatar,hm.time,u.role as userName
         from User u join HeadMessage hm on u.id = hm.contactId
                  where hm.userId = #{userId}
      union
-      select hm.id,hm.content,hm.contactId,g.name as contactName,g.avatar as contactAvatar,hm.time
+      select hm.id,hm.content,hm.contactId,g.name as contactName,g.avatar as contactAvatar,hm.time,
+             u.nickname as userName
         from UserGroup g join HeadMessage hm on g.id = hm.contactId
+        join User u on u.id = hm.userId
           where hm.userId = #{userId}
     </select>
 

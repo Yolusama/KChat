@@ -15,6 +15,7 @@ public class SentChatMessageModel {
     private Integer type;
     private String fileName;
     private String fileSize;
+    private String image;
     private String contactAvatar;
     private String contactName;
     private Boolean isVerification;

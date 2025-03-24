@@ -5,7 +5,9 @@ import KChat.Entity.VO.HeadMessageVO;
 import KChat.Entity.VO.PagedData;
 import KChat.Model.ChatMessageModel;
 import KChat.Model.HeadMessageModel;
+import KChat.Service.FileService;
 import KChat.Service.MQMsgProducer;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -14,7 +16,9 @@ public interface IChatMessageService {
     Long createHeadMessage(HeadMessageModel model);
     Long freshHeadMessage(HeadMessageModel model);
     List<HeadMessageVO> getHeadMessages(String userId);
-    PagedData<ChatMessageVO> getChatMessages(Integer page,Integer pageSize,String userId,String contactId);
+    PagedData<ChatMessageVO> getChatMessages(Integer page,Integer pageSize,String userId,String contactId,
+                                             FileService fileService);
     Long createMessage(ChatMessageModel model,MQMsgProducer msgProducer);
     void createOfflineMessage(ChatMessageModel model);
+    String uploadFile(String suffix, MultipartFile file, FileService fileService);
 }

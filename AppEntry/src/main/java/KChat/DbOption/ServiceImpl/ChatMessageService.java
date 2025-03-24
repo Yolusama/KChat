@@ -6,13 +6,14 @@ import KChat.DbOption.Mapper.HeadMessageMapper;
 import KChat.DbOption.Mapper.UserApplyMapper;
 import KChat.DbOption.Service.IChatMessageService;
 import KChat.Entity.ChatMessage;
+import KChat.Entity.Enum.MessageType;
 import KChat.Entity.HeadMessage;
 import KChat.Entity.VO.ChatMessageVO;
 import KChat.Entity.VO.HeadMessageVO;
-import KChat.Entity.VO.MsgUnReadVO;
 import KChat.Entity.VO.PagedData;
 import KChat.Model.ChatMessageModel;
 import KChat.Model.HeadMessageModel;
+import KChat.Service.FileService;
 import KChat.Service.MQMsgProducer;
 import KChat.Utils.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -20,6 +21,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -80,13 +82,19 @@ public class ChatMessageService implements IChatMessageService {
     }
 
     @Override
-    public PagedData<ChatMessageVO> getChatMessages(Integer page, Integer pageSize, String userId, String contactId) {
+    public PagedData<ChatMessageVO> getChatMessages(Integer page, Integer pageSize, String userId, String contactId,
+                                                    FileService fileService) {
         Page<ChatMessageVO> pageRes = Page.of(page,pageSize);
         List<ChatMessageVO> data;
         if(contactId.indexOf(Constants.GroupIdPrefix)>=Constants.None)
             data = messageMapper.getGroupMessages(pageRes,userId,contactId);
         else
             data = messageMapper.getChatMessages(pageRes,userId,contactId);
+        for(var msg:data.stream().filter(m->!m.getType().equals(MessageType.COMMON.value())).collect(Collectors.toList())){
+            if(msg.fileTimeOut()){
+                fileService.removeCacheFile(msg.getFileName());
+            }
+        }
         return new PagedData<>(data,pageRes.getTotal());
     }
 
@@ -140,5 +148,10 @@ public class ChatMessageService implements IChatMessageService {
             contactHeadMsg.setTime(model.getTime());
             headMapper.updateById(contactHeadMsg);
         }
+    }
+
+    @Override
+    public String uploadFile(String suffix, MultipartFile file, FileService fileService) {
+        return fileService.uploadCacheFile(file,suffix);
     }
 }

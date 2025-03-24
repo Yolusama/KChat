@@ -11,6 +11,7 @@ import java.util.Date;
 public class HeadMessageVO {
     private Long id;
     private String content;
+    private String userName;
     private String contactId;
     private String contactName;
     private String contactAvatar;

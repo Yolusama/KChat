@@ -14,5 +14,5 @@ public class ChatMessageModel {
     private Date time;
     private Integer type;
     private String fileName;
-    private String fileSize;
+    private Long fileSize;
 }

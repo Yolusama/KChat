@@ -25,6 +25,7 @@ public final class Constants {
     public static final Duration UserGroupsGetExpire = Duration.ofHours(1);
     public static final Duration SSETimeOut = UserGroupsGetExpire;
     public static final Duration NormalCachingExpire = Duration.ofMinutes(3);
+    public static final Duration FileCachedExpire = Duration.ofDays(7);
 
     public static Date now(){
         return new Date();

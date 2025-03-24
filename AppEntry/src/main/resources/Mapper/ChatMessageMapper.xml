@@ -4,7 +4,7 @@
 <mapper namespace="KChat.DbOption.Mapper.ChatMessageMapper">
     <select id="getChatMessages" resultType="KChat.Entity.VO.ChatMessageVO">
         select cm.id,cm.userId,cm.contactId,u.nickname as contactName,u.avatar as contactAvatar,
-        cm.content,cm.fileName,cm.fileSize,cm.time from User u
+        cm.content,cm.fileName,cm.fileSize,cm.type,cm.time from User u
         join ChatMessage cm on cm.contactId = u.id
         <where>
                 <if test="userId!=contactId">
@@ -20,7 +20,7 @@
 
     <select id="getGroupMessages" resultType="KChat.Entity.VO.ChatMessageVO">
         select cm.id,cm.userId,cm.contactId,u.nickname as contactName,u.avatar as contactAvatar,
-               cm.content,cm.fileName,cm.fileSize,cm.time from User u
+               cm.content,cm.fileName,cm.fileSize,cm.type,cm.time from User u
                join ChatMessage cm on cm.contactId like 'G%' and cm.userId = u.id
              where cm.contactId = #{groupId}
         order by cm.time

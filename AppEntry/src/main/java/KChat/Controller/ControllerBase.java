@@ -50,6 +50,8 @@ public abstract class ControllerBase {
 
     public HttpEntity<byte[]> fileResult(String fileName, byte[] data)
     {
+        if(data == null)
+            return ResponseEntity.ok(null);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName)
                 .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(data.length))

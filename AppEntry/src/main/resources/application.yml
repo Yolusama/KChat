@@ -60,6 +60,6 @@ resource:
 netty:
   path: /ws
   port: 5726
-  maxContentLength: 65536
+  maxContentLength: 1048576
   handshakeTimeOut: 100000
 

@@ -1,34 +1,74 @@
 package KChat.Service;
 
-import KChat.Common.Constants;
-import KChat.Utils.DateUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class FileService {
     @Value("${resource.img.path}")
     private String imgPath;
+    @Value("${resource.file.path}")
+    private String fileCachePath;
 
     private final Integer bufferSize = 2048;
 
     public String uploadImage(MultipartFile image){
-        String newFileName = null;
         try {
-            InputStream stream = image.getInputStream();
             String fileName = image.getOriginalFilename();
             String suffix = fileName.substring(fileName.lastIndexOf('.'));
-            newFileName = UUID.randomUUID() + suffix;
-            FileOutputStream output = new FileOutputStream(String.format("%s/%s",imgPath,newFileName));
+            return toUpload(image.getInputStream(),suffix,imgPath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public void removeImage(String imgName){
+        toRemove(imgPath,imgName);
+    }
+
+    public void removeCacheFile(String fileName){
+        toRemove(fileCachePath,fileName);
+    }
+
+    public String uploadCacheFile(MultipartFile file,String suffix){
+        try {
+            return toUpload(file.getInputStream(),suffix,fileCachePath);
+        }
+        catch (Exception ex){
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
+    public byte[] getCacheFileBytes(String fileName){
+        return toDownload(fileCachePath,fileName);
+    }
+
+    private byte[] toDownload(String root, String fileName){
+        try {
+            FileInputStream stream = new FileInputStream(String.format("%s/%s",root,fileName));
+            byte[] res = stream.readAllBytes();
+            stream.close();
+            return res;
+        }
+        catch (Exception ex){
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
+    private String toUpload(InputStream stream,String suffix, String root){
+        String newFileName = null;
+        try {
+            newFileName = suffix.isEmpty()||suffix.isBlank() ? UUID.randomUUID().toString():
+                    String.format("%s.%s",UUID.randomUUID(),suffix);
+            FileOutputStream output = new FileOutputStream(String.format("%s/%s",root,newFileName));
             int len;
             byte[] buffer = new byte[bufferSize];
             while((len=stream.read(buffer))>0)
@@ -41,25 +81,13 @@ public class FileService {
         return newFileName;
     }
 
-    public void removeImage(String imgName){
+    private void toRemove(String root,String fileName){
         try {
-            Files.delete(Paths.get(String.format("%s/%s",imgPath,imgName)));
-        } catch (IOException e) {
+            File file = new File(String.format("%s/%s",root,fileName));
+            if(file.exists()&&file.isFile())
+                file.delete();
+        } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    public byte[] toDownload(String fileName){
-        try {
-            String downloadPath = "";
-            FileInputStream stream = new FileInputStream(downloadPath+fileName);
-            byte[] res = stream.readAllBytes();
-            stream.close();
-            return res;
-        }
-        catch (Exception ex){
-            ex.printStackTrace();
-        }
-        return null;
     }
 }
