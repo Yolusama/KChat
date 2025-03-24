@@ -8590,8 +8590,12 @@ function processCorresponse(window2) {
 }
 function handleRenderInvoke() {
   electron.ipcMain.handle("writeFile", (event, account, fileName, content) => {
-    const pathToWrite = `${fileStorePath}/${account}/${fileName}`;
     return new Promise((resolve, reject) => {
+      const dir = `${fileStorePath}/${account}`;
+      if (!fs.existsSync(dir))
+        fs.mkdirSync(dir, { recursive: true }, () => {
+        });
+      const pathToWrite = `${dir}/${fileName}`;
       fs.writeFile(pathToWrite, content, {}, (err) => {
         if (err) reject(err);
         else resolve();
@@ -8601,31 +8605,20 @@ function handleRenderInvoke() {
   electron.ipcMain.handle("readFile", (event, account, fileName) => {
     const pathToRead = `${fileStorePath}/${account}/${fileName}`;
     return new Promise((resolve, reject) => {
-      fs.readFile(pathToRead, { encoding: "utf-8" }, (err, data) => {
+      fs.readFile(pathToRead, { encoding: null }, (err, data) => {
         if (err) reject(err);
         else resolve(data);
       });
     });
   });
-  electron.ipcMain.handle("testRead", (event, path) => {
+  electron.ipcMain.handle("fileExists", (event, account, fileName) => {
+    const pathToRead = `${fileStorePath}/${account}/${fileName}`;
     return new Promise((resolve, reject) => {
-      fs.readFile(path, { encoding: "utf-8" }, (err, data) => {
-        if (err) reject(err);
-        else resolve(data);
-      });
-    });
-  });
-  electron.ipcMain.handle("testWrite", (event, path, content) => {
-    return new Promise((resolve, reject) => {
-      const index = path.lastIndexOf("/");
-      const dir = path.substring(0, index);
-      if (!fs.existsSync(dir))
-        fs.mkdir(dir, { recursive: true }, () => {
-        });
-      fs.writeFile(path, content, { flag: "w+" }, (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
+      try {
+        resolve(fs.existsSync(pathToRead));
+      } catch (e) {
+        reject(e);
+      }
     });
   });
 }

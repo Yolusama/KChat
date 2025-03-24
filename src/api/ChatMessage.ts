@@ -1,4 +1,5 @@
-import type { Result } from "../modules/Request";
+import { getFileSuffix } from "../modules/Common";
+import { GetAsync, type Result } from "../modules/Request";
 import { api, authorization } from "./Api";
 
 const messageApiPettern = "/Api/Chat";
@@ -31,4 +32,24 @@ export function GetMessages(currentPage:number,pageSize:number,userId:string,con
 
 export function CreateOfflineMessage(chatMessage:any){
     api.put(chatApiUrl("/CreateOfflineMessage"),authorization(),chatMessage);
+}
+
+export function UploadFile(file:any,successCallback:(res:Result)=>void){
+    const data = new FormData();
+    data.append("file",file);
+    data.append("suffix",getFileSuffix(file.name));
+
+    api.post(chatApiUrl("/UploadFile"),authorization(true),data,successCallback);
+}
+
+export async function GetCacheFile(fileName:string,result:any) {
+    const res = await GetAsync(chatApiUrl(`/GetCacheFile?fileName=${fileName}`),{
+        responseType:"arraybuffer",
+        headers:authorization()
+    });
+    if(res.byteLength==0){
+        result.data = "";
+    }
+    else
+       result.data = Buffer.from(res);
 }

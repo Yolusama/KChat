@@ -156,3 +156,18 @@ export function timeWithoutSeconds(date: Date) {
 
     return `${withZeroStr(date.getHours())}:${withZeroStr(date.getMinutes())}`;
 }
+
+export function getFileSuffix(fileName:string){
+    const index = fileName.lastIndexOf('.');
+    if(index<0)
+        return "";
+    else
+       return fileName.substring(index+1);
+}
+
+export function playNotifyAudio(){
+    const audio = new Audio("src/assets/recev-msg.ogg");
+    audio.muted = false;
+    audio.volume = 1;
+    audio.play().catch(err=>console.log(err));
+}

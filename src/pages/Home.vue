@@ -68,8 +68,6 @@ function messageCallback(event: MessageEvent<any>) {
   unreadOpt.value[data.key] = data["value"];
 }
 
-
-
 onBeforeUnmount(() => {
   sse.close();
 }); 

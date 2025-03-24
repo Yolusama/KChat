@@ -106,7 +106,3 @@ export function authorization(isFormData = false) {
             token: user.token
         };
 }
-
-export function requestUrl(basePattern:string,url:string){
-    return basePattern + url;
-}

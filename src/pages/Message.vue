@@ -15,7 +15,9 @@
                     </div>
                     <div class="between">
                         <span class="text-overflow content" :style="currentHeadMessage != null && currentHeadMessage.id == message.id ?
-                            'color:white' : ''">{{ message.content }}</span>
+                            'color:white' : ''">{{ isGroupMsg(message.contactId) ? `${message.userName}:
+                            ${message.content}` :
+                                message.content }}</span>
                     </div>
                 </div>
             </div>
@@ -32,8 +34,20 @@
                     <div class="content user" v-if="message.userId == state.user.id && !isGroupMsg(message.contactId)">
                         <span class="time">{{ new Date(message.time).toLocaleString() }}</span>
                         <div class="user-info right">
-                            <div class="message-body" v-html="message.content">
+                            <div class="message-body" v-html="message.content"
+                                v-if="message.type == MessageType.common">
                             </div>
+                            <el-image class="msg-img" :src="imageMsgDisplay(message)"
+                                :preview-src-list="[imageMsgDisplay(message)]" v-if="message.type == MessageType.image"
+                                fit="fill">
+                                <template #error>
+                                    <div class="err-img">
+                                        <el-icon>
+                                            <Picture></Picture>
+                                        </el-icon>
+                                    </div>
+                                </template>
+                            </el-image>
                             <img :src="imgSrc(state.user.avatar)" class="avatar">
                         </div>
                     </div>
@@ -42,7 +56,19 @@
                         <span class="time">{{ new Date(message.time).toLocaleString() }}</span>
                         <div class="user-info left">
                             <img :src="imgSrc(message.contactAvatar)" class="avatar">
-                            <div class="message-body" v-html="message.content">
+                            <el-image class="msg-img" :src="imageMsgDisplay(message)"
+                                :preview-src-list="[imageMsgDisplay(message)]" v-if="message.type == MessageType.image"
+                                fit="fill">
+                                <template #error>
+                                    <div class="err-img">
+                                        <el-icon>
+                                            <Picture></Picture>
+                                        </el-icon>
+                                    </div>
+                                </template>
+                            </el-image>
+                            <div class="message-body" v-html="message.content"
+                                v-if="message.type == MessageType.common">
                             </div>
                         </div>
                     </div>
@@ -65,9 +91,19 @@
                 </div>
             </el-scrollbar>
             <div class="edit no-drag">
+                <div class="send-list">
+                    <el-tooltip effect="dark" content="发送图片" placement="top">
+                        <label for="pic">
+                            <el-icon style="font-size:20px;cursor:pointer">
+                                <Picture />
+                            </el-icon>
+                        </label>
+                    </el-tooltip>
+                    <input type="file" style="display:none" id="pic" @change="chooseImage" accept="image/*">
+                </div>
                 <textarea v-model="state.content" class="input" style="" @keydown="keyToSend">
-                    </textarea>
-                <el-tooltip effect="dark" content="按住ctrl+空格快速送" placement="top">
+    </textarea>
+                <el-tooltip effect="dark" content="按住ctrl+空格快捷发送" placement="top">
                     <el-button type="primary" class="send" @click="send">发送</el-button>
                 </el-tooltip>
             </div>
@@ -78,16 +114,21 @@
 <script lang="ts" setup>
 import { reactive, onMounted, ref, onBeforeUnmount } from 'vue';
 import webSocket from '../modules/WebSocket';
-import { copy, MessageType, PageOption, timeWithoutSeconds } from '../modules/Common';
-import { CreateMessage, FreshHeadMessage, GetHeadMessages, GetMessages } from '../api/ChatMessage';
+import { copy, getFileSuffix, MessageType, PageOption, playNotifyAudio, timeWithoutSeconds } from '../modules/Common';
+import { CreateMessage, FreshHeadMessage, GetCacheFile, GetHeadMessages, GetMessages, UploadFile } from '../api/ChatMessage';
 import stateStroge from '../modules/StateStorage';
 import { imgSrc } from '../modules/Request';
+import { ipcRenderer } from 'electron';
 
 const state = reactive<any>({
     headMessages: [],
     verifications: [],
     user: {},
-    content: ""
+    content: "",
+    file: {
+        name: "",
+        size: 0
+    }
 });
 
 const currentHeadMessage = ref<any>(null);
@@ -105,7 +146,7 @@ const msgPageOpt = ref<PageOption>(new PageOption(1, 15, []));
 
 function messageHandle(event: MessageEvent<any>) {
     const msg = JSON.parse(event.data);
-    console.log(msg);
+    playNotifyAudio();
     if (currentHeadMessage.value != null && (currentHeadMessage.value.contactId == msg.userId ||
         currentHeadMessage.value.contactId == msg.contactId)) {
         const { contactName, contactAvatar } = currentHeadMessage.value;
@@ -119,6 +160,13 @@ function messageHandle(event: MessageEvent<any>) {
         }
         else
             msgPageOpt.value.data.push(msg);
+        if (msg.type == MessageType.image) {
+            const res: any = {};
+            GetCacheFile(msg.fileName, res).then(async () => {
+                console.log(res);
+                await ipcRenderer.invoke("writeFile", state.user.account, msg.fileName, res.data);
+            });
+        }
     }
     const toFresh: any = {};
     copy(msg, toFresh);
@@ -129,17 +177,22 @@ function messageHandle(event: MessageEvent<any>) {
     freshHeadMessage(toFresh);
 }
 
-function sendMessage(headMessage: any) {
+function sendMessage(headMessage: any, type: Number) {
     const { contactId, contactName, contactAvatar } = headMessage;
     const message: any = {
         userId: state.user.id,
         contactId: contactId,
         time: new Date(),
         content: state.content,
-        type: MessageType.common,
+        type: type,
         contactName: contactName,
         contactAvatar: contactAvatar
     };
+    if (type == MessageType.image) {
+        message.fileName = state.file.name;
+        message.fileSize = state.file.size;
+        message.content = "图片";
+    }
     webSocket.sendMessage(message, () => {
         CreateMessage(message, res => {
             const data = res.data;
@@ -154,6 +207,12 @@ function sendMessage(headMessage: any) {
                 freshHeadMessage(message);
             }
             state.content = "";
+            if (type != MessageType.common) {
+                state.file = {
+                    name: "",
+                    size: 0
+                };
+            }
         });
     });
 }
@@ -212,17 +271,57 @@ function keyToSend(event: KeyboardEvent) {
 
     if (event.ctrlKey) {
         if (key == "Enter")
-            sendMessage(currentHeadMessage.value);
+            sendMessage(currentHeadMessage.value, MessageType.common);
     }
 }
 
 function send() {
     if (state.content.length == 0) return;
-    sendMessage(currentHeadMessage.value);
+    sendMessage(currentHeadMessage.value, MessageType.common);
 }
 
 function createdGroup(headMessage: any) {
     state.headMessages.splice(0, 0, headMessage);
+}
+
+function imageMsgDisplay(message: any) {
+    if (message.image != undefined)
+        return message.image;
+    const account = state.user.account;
+    const fileName = message.fileName;
+    ipcRenderer.invoke("fileExists", account, fileName).then(exists => {
+        if (exists) {
+            ipcRenderer.invoke("readFile", account, fileName).then(data => {
+                const buffer = Buffer.from(data);
+                message.image = `data:image/${getFileSuffix(fileName)};base64,${buffer.toString("base64")}`;
+            });
+        }
+        else {
+            const data: any = {};
+            GetCacheFile(fileName, data).then(() => {
+                ipcRenderer.invoke("writeFile", account, fileName, data.data).then(()=>{
+                    message.image = `data:image/${getFileSuffix(fileName)};base64,${data.data.toString("base64")}`;
+                });
+            });
+        }
+    })
+
+    return message.image;
+}
+
+function chooseImage(e: any) {
+    const file = e.target.files[0];
+    UploadFile(file, async (res) => {
+        const newFileName = res.data;
+        state.file.name = newFileName;
+        state.file.size = file.size;
+
+        const data: any = {};
+        await GetCacheFile(newFileName, data);
+        ipcRenderer.invoke("writeFile", state.user.account, newFileName, data.data).then(() => {
+            sendMessage(currentHeadMessage.value, MessageType.image);
+        });
+    });
 }
 
 onBeforeUnmount(() => {
@@ -314,8 +413,6 @@ onBeforeUnmount(() => {
 
 #message .user-info {
     display: flex;
-    align-items: center;
-    height: 32px;
     width: 100%;
 }
 
@@ -333,7 +430,7 @@ onBeforeUnmount(() => {
     font-size: 14px;
     text-align: left;
     border-radius: 7px;
-    height: 20px;
+    min-height: 20px;
     padding: 1%;
     width: fit-content;
     margin-top: 1%;
@@ -468,5 +565,39 @@ onBeforeUnmount(() => {
 #message .group-user-self .nickname {
     width: 30%;
     text-align: right;
+}
+
+#message .edit .send-list {
+    height: 25px;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding-left: 20px;
+}
+
+#message .msg-img {
+    max-width: 80%;
+    max-height: 40vh;
+    border-radius: 7px;
+    min-width: 30px;
+    min-height: 30px;
+    display: flex;
+}
+
+#message .err-img {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    width: 100%;
+    height: 100%;
+}
+
+.right .msg-img {
+    margin-right: 1%;
+}
+
+.left .msg-img{
+    margin-left: 1%;
 }
 </style>

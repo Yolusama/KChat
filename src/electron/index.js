@@ -43,13 +43,13 @@ function processCorresponse(window) {
 
 function handleRenderInvoke() {
   ipcMain.handle("writeFile", (event, account, fileName, content) => {
-    const dir = `${fileStorePath}/${account}`;
-    if(!fs.existsSync(dir))
-      fs.mkdir(dir,{recursive:true},()=>{});
-    const pathToWrite = `${dir}/${fileName}`;
-    return new Promise((resolve,reject)=>{
+    return new Promise((resolve, reject) => {
+      const dir = `${fileStorePath}/${account}`;
+      if (!fs.existsSync(dir))
+        fs.mkdirSync(dir, { recursive: true }, () => { });
+      const pathToWrite = `${dir}/${fileName}`;
       fs.writeFile(pathToWrite, content, {}, err => {
-        if(err) reject(err);
+        if (err) reject(err);
         else resolve();
       });
     });
@@ -58,35 +58,47 @@ function handleRenderInvoke() {
   ipcMain.handle("readFile", (event, account, fileName) => {
     const pathToRead = `${fileStorePath}/${account}/${fileName}`;
     return new Promise((resolve, reject) => {
-      fs.readFile(pathToRead, { encoding: "utf-8" }, (err, data) => {
+      fs.readFile(pathToRead, { encoding: null }, (err, data) => {
         if (err) reject(err);
         else resolve(data);
       });
     })
   });
 
- /* ipcMain.handle("testRead", (event, path) => {
-    return new Promise((resolve, reject) => {
-      fs.readFile(path, { encoding: "utf-8" }, (err, data) => {
-        if (err) reject(err);
-        else resolve(data);
-      });
+  ipcMain.handle("fileExists",(event,account,fileName)=>{
+    const pathToRead = `${fileStorePath}/${account}/${fileName}`;
+    return new Promise((resolve,reject)=>{
+      try{
+        resolve(fs.existsSync(pathToRead));
+      }
+      catch(e){
+        reject(e);
+      }
     });
   });
 
-  ipcMain.handle("testWrite", (event, path, content) => {
-    return new Promise((resolve, reject) => {
-      const index = path.lastIndexOf('/');
-      const dir = path.substring(0,index);
-      if(!fs.existsSync(dir))
-          fs.mkdir(dir,{recursive:true},()=>{});
-      fs.writeFile(path, content,{flag:"w+"}, err => {
-        if(err) reject(err);
-        else resolve();
-      });
-    });
-
-  });*/
+  /* ipcMain.handle("testRead", (event, path) => {
+     return new Promise((resolve, reject) => {
+       fs.readFile(path, { encoding: "utf-8" }, (err, data) => {
+         if (err) reject(err);
+         else resolve(data);
+       });
+     });
+   });
+ 
+   ipcMain.handle("testWrite", (event, path, content) => {
+     return new Promise((resolve, reject) => {
+       const index = path.lastIndexOf('/');
+       const dir = path.substring(0,index);
+       if(!fs.existsSync(dir))
+           fs.mkdir(dir,{recursive:true},()=>{});
+       fs.writeFile(path, content,{flag:"w+"}, err => {
+         if(err) reject(err);
+         else resolve();
+       });
+     });
+ 
+   });*/
 }
 
 function subWinCallback(subWin) {

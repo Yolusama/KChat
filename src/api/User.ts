@@ -1,10 +1,10 @@
 import { type Result } from "../modules/Request";
-import { api,authorization,requestUrl } from "./Api";
+import { api,authorization } from "./Api";
 
 const userApiPettrn = "/Api/User";
 
 function userApiUrl(url:string){
-    return requestUrl(userApiPettrn,url); 
+    return userApiPettrn+url; 
 }
 
 export function Login(account:string,password:string,successCallback:(result:Result)=>void){
