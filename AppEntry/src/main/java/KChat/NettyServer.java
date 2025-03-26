@@ -1,11 +1,8 @@
 package KChat;
 
 import KChat.Common.Constants;
-import KChat.Configuration.NettyChannelConfig;
 import KChat.Configuration.NettyConfig;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerAdapter;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;

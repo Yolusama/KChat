@@ -12,4 +12,16 @@
         select count(1) from User u join UserContact uc on u.id = uc.userId
         where uc.userId = #{userId} and uc.contactId = #{groupId}
     </select>
+
+    <select id="getMemberIds" resultType="java.lang.String">
+        select uc.userId from UserGroup g
+             join UserContact uc on uc.contactId = g.id
+               join User u on u.id = uc.userId
+        <where>
+            g.id = #{groupId}
+            <if test="offline!=null">
+                and u.offline = #{offline}
+            </if>
+        </where>
+    </select>
 </mapper>

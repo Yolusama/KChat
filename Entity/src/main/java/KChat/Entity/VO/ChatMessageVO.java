@@ -17,6 +17,7 @@ public class ChatMessageVO {
     private Integer type;
     private String content;
     private String fileName;
+    private String filePath;
     private Long fileSize;
     private Date time;
 

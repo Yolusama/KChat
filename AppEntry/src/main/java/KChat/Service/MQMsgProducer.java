@@ -2,6 +2,7 @@ package KChat.Service;
 
 import KChat.Configuration.RabbitMQConfig;
 import KChat.Entity.ChatMessage;
+import KChat.Entity.MessageRecord;
 import KChat.Entity.UserApply;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,10 +28,10 @@ public class MQMsgProducer {
                     String.format("%s %s",RabbitMQConfig.QueueName1,apply.getContactId()));
         }
 
-        else if(type.equals(ChatMessage.class)){
-            ChatMessage message = (ChatMessage) obj;
+        else if(type.equals(MessageRecord.class)){
+           MessageRecord record = (MessageRecord) obj;
             template.convertAndSend(config.getExchangeName(),config.getMessageKey(),
-                    String.format("%s %s",RabbitMQConfig.QueueName2,message.getContactId()));
+                    String.format("%s %s",RabbitMQConfig.QueueName2,record.getContactId()));
         }
 
     }

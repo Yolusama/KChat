@@ -16,6 +16,7 @@ import java.util.List;
 public interface UserGroupMapper extends BaseMapper<UserGroup> {
     List<GroupVO> getGroups(@Param("userId")String userId);
     Integer hasUserJoined(@Param("userId")String userId,@Param("groupId")String groupId);
+    List<String> getMemberIds(@Param("groupId")String groupId,@Param("offline")Boolean offline);
 
     @Select("select g.id from UserGroup g join UserContact uc on g.id = uc.contactId where uc.userId=#{userId}")
     List<String> getUserGroupIds(@Param("userId")String userId);

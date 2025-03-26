@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="KChat.DbOption.Mapper.MessageRecordMapper">
+    <insert id="batchInsert">
+        insert into MessageRecord values
+        <foreach collection="records" item="r" separator="," >
+            (null,#{r.userId},#{r.contactId},#{r.messageId})
+        </foreach>
+    </insert>
+</mapper>

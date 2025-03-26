@@ -21,4 +21,5 @@ public class SentChatMessageModel {
     private Boolean isVerification;
     private Long applyId;
     private Integer applyStatus;
+    private String userName;
 }

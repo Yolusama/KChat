@@ -1,5 +1,6 @@
 package KChat.Controller;
 
+import KChat.Common.Pair;
 import KChat.DbOption.Service.IChatMessageService;
 import KChat.DbOption.ServiceImpl.ChatMessageService;
 import KChat.Entity.VO.ChatMessageVO;
@@ -76,7 +77,8 @@ public class ChatMessageController extends ControllerBase{
     }
 
     @PostMapping("/UploadFile")
-    public ActionResult<String> UploadFile(@RequestPart("file") MultipartFile file,@RequestPart("suffix") String suffix){
+    public ActionResult<Pair<String,String>> UploadFile(@RequestPart("file") MultipartFile file,
+                                         @RequestPart("suffix") String suffix){
         return successWithData(chatMessageService.uploadFile(suffix,file,fileService));
     }
 

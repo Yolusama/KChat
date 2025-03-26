@@ -1,5 +1,6 @@
 package KChat.DbOption.Service;
 
+import KChat.Common.Pair;
 import KChat.Entity.VO.ChatMessageVO;
 import KChat.Entity.VO.HeadMessageVO;
 import KChat.Entity.VO.PagedData;
@@ -20,5 +21,5 @@ public interface IChatMessageService {
                                              FileService fileService);
     Long createMessage(ChatMessageModel model,MQMsgProducer msgProducer);
     void createOfflineMessage(ChatMessageModel model);
-    String uploadFile(String suffix, MultipartFile file, FileService fileService);
+    Pair<String,String> uploadFile (String suffix, MultipartFile file, FileService fileService);
 }

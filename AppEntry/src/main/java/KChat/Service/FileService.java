@@ -15,7 +15,7 @@ public class FileService {
     @Value("${resource.file.path}")
     private String fileCachePath;
 
-    private final Integer bufferSize = 2048;
+    private final Integer bufferSize = 4096;
 
     public String uploadImage(MultipartFile image){
         try {
