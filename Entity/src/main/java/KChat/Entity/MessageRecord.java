@@ -34,8 +34,12 @@ public class MessageRecord {
     @TableField(jdbcType = JdbcType.TINYINT)
     private Boolean userSent;
     /**
-     *用户id对应用户信息删除情况1.移除，0.保持
+     * 发送方的文件原路径/接收方的文件储存路径，默认值为浏览器下载的路径
+     */
+    private String filePath;
+    /**
+     * 文件是否已被下载，1.是，0.否;发送方恒为1
      */
     @TableField(jdbcType = JdbcType.TINYINT)
-    private Boolean userDelete;
+    private Boolean downloaded;
 }

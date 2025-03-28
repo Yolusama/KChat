@@ -40,10 +40,6 @@ public class ChatMessage {
     */
     private Long fileSize;
     /**
-    * 发送方的文件原路径/接收方的文件储存路径，默认值为浏览器下载的路径
-    */
-    private String filePath;
-    /**
     * 消息收到/成功发送的时间
     */
     private Date time;

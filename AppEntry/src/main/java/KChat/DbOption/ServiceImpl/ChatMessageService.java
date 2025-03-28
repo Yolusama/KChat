@@ -1,7 +1,6 @@
 package KChat.DbOption.ServiceImpl;
 
 import KChat.Common.Constants;
-import KChat.Common.Pair;
 import KChat.DbOption.Mapper.*;
 import KChat.DbOption.Service.IChatMessageService;
 import KChat.Entity.ChatMessage;
@@ -14,6 +13,7 @@ import KChat.Entity.VO.HeadMessageVO;
 import KChat.Entity.VO.PagedData;
 import KChat.Model.ChatMessageModel;
 import KChat.Model.HeadMessageModel;
+import KChat.Model.MessageRecordModel;
 import KChat.Service.FileService;
 import KChat.Service.MQMsgProducer;
 import KChat.Utils.ObjectUtil;
@@ -38,17 +38,20 @@ public class ChatMessageService implements IChatMessageService {
     private final MessageRecordMapper recordMapper;
     private final GroupMessageRecordMapper groupMessageRecordMapper;
     private final UserGroupMapper groupMapper;
+    private final UserMapper userMapper;
 
     @Autowired
     public ChatMessageService(ChatMessageMapper messageMapper,HeadMessageMapper headMapper,
                               MessageRecordMapper recordMapper,
                               GroupMessageRecordMapper groupMessageRecordMapper,
-                              UserGroupMapper groupMapper){
+                              UserGroupMapper groupMapper,
+                              UserMapper userMapper){
         this.messageMapper = messageMapper;
         this.headMapper = headMapper;
         this.recordMapper = recordMapper;
         this.groupMessageRecordMapper = groupMessageRecordMapper;
         this.groupMapper = groupMapper;
+        this.userMapper = userMapper;
     }
 
     @Override
@@ -156,6 +159,15 @@ public class ChatMessageService implements IChatMessageService {
         MessageRecord record = new MessageRecord();
         record.setContactId(model.getContactId());
         msgProducer.produceAndSend(record);
+        if(model.getContactId().indexOf(Constants.GroupIdPrefix)<Constants.None) {
+            Boolean online = userMapper.isOnline(model.getContactId());
+            if (!online) {
+                LambdaUpdateWrapper<HeadMessage> wrapper = new LambdaUpdateWrapper<>();
+                wrapper.eq(HeadMessage::getUserId, model.getContactId()).eq(HeadMessage::getContactId, model.getUserId())
+                        .set(HeadMessage::getContent, model.getContent()).set(HeadMessage::getTime, model.getTime());
+                headMapper.update(wrapper);
+            }
+        }
         return message.getId();
     }
 
@@ -202,77 +214,63 @@ public class ChatMessageService implements IChatMessageService {
         ObjectUtil.copy(model,message);
         message.setHandled(false);
         messageMapper.insert(message);
+        if(model.getContactId().indexOf(Constants.GroupIdPrefix)>=Constants.None){
+            List<GroupMessageRecord> records = new ArrayList<>();
+            for(String userId:groupMapper.getMemberIds(model.getContactId(),null))
+            {
+                GroupMessageRecord groupMessageRecord = new GroupMessageRecord();
+                groupMessageRecord.setMessageId(message.getId());
+                groupMessageRecord.setUserId(model.getUserId());
+                groupMessageRecord.setMemberId(userId);
+                groupMessageRecord.setGroupId(model.getContactId());
+                groupMessageRecord.setFilePath(model.getFilePath());
+                if(!model.getType().equals(MessageType.COMMON.value())
+                        &&!model.getType().equals(MessageType.PICTURE.value()))
+                    groupMessageRecord.setDownloaded(userId.equals(model.getUserId()));
+                groupMessageRecord.setSelfRecord(userId.equals(model.getUserId()));
+                records.add(groupMessageRecord);
+            }
+            if(records.size()>0)
+                groupMessageRecordMapper.batchInsert(records);
+            return;
+        }
         MessageRecord record = new MessageRecord();
         record.setMessageId(message.getId());
         record.setUserId(model.getUserId());
         record.setContactId(model.getContactId());
         record.setUserSent(true);
-        if(model.getContactId().indexOf(Constants.GroupIdPrefix)>=Constants.None){
-            record.setUserSent(true);
-            recordMapper.insert(record);
-            List<GroupMessageRecord> records = new ArrayList<>();
-            for(String userId:groupMapper.getMemberIds(model.getContactId(),null))
-            {
-                GroupMessageRecord groupMessageRecord = new GroupMessageRecord();
-                groupMessageRecord.setRecordId(record.getId());
-                groupMessageRecord.setMemberId(userId);
-                records.add(groupMessageRecord);
-            }
-            groupMessageRecordMapper.batchInsert(records);
-            return;
-        }
+        record.setFilePath(model.getFilePath());
+        record.setDownloaded(true);
         MessageRecord contactRecord = new MessageRecord();
         contactRecord.setMessageId(message.getId());
         contactRecord.setUserId(model.getUserId());
         contactRecord.setContactId(model.getContactId());
         contactRecord.setUserSent(false);
+        contactRecord.setFilePath(null);
+        contactRecord.setDownloaded(false);
         recordMapper.batchInsert(List.of(record,contactRecord));
     }
 
     @Override
-    public Pair<String, String> uploadFile(String suffix, MultipartFile file, FileService fileService) {
-        return Pair.makePair(fileService.uploadCacheFile(file,suffix),file.getOriginalFilename());
+    public String uploadFile(String suffix, MultipartFile file, FileService fileService) {
+        return fileService.uploadCacheFile(file,suffix);
+    }
+
+    @Override
+    @Transactional
+    public void updateFilePath(MessageRecordModel model, MQMsgProducer msgProducer) {
+        int res;
+        if(model.getContactId().indexOf('G')>=Constants.None)
+        res = recordMapper.updateFilePath(model.getMessageId(),model.getUserId()
+                ,model.getContactId(),model.getFilePath());
+        else
+            res = groupMessageRecordMapper.updateFilePath(model.getMessageId(),model.getUserId(),
+                    model.getContactId(),model.getFilePath());
+        if(res!=Constants.None)
+        {
+            MessageRecord record = new MessageRecord();
+            record.setContactId(model.getUserId());
+            msgProducer.produceAndSend(record);
+        }
     }
 }
-
-/*
-     if(isGroupMsg){
-            Long res = null;
-            List<HeadMessage> toInsert = new ArrayList<>();
-            List<String> toUpdateUserIds = new ArrayList<>();
-            List<String> memberIds = groupMapper.getMemberIds(model.getContactId());
-            for(String userId:memberIds){
-                LambdaQueryWrapper<HeadMessage> wrapper = new LambdaQueryWrapper<>();
-                wrapper.eq(HeadMessage::getUserId,userId).eq(HeadMessage::getContactId,model.getContactId());
-                HeadMessage message = headMapper.selectOne(wrapper);
-                if(message == null){
-                    message = new HeadMessage();
-                    message.setTime(model.getTime());
-                    message.setUserId(model.getUserId());
-                    message.setContactId(model.getContactId());
-                    message.setContent(model.getContent());
-                    if(message.getUserId().equals(model.getUserId()))
-                    {
-                        headMapper.insert(message);
-                        res = message.getId();
-                    }
-                    else toInsert.add(message);
-                }
-                else{
-                    toUpdateUserIds.add(message.getUserId());
-                    if(message.getUserId().equals(model.getUserId()))
-                        res = message.getId();
-                }
-            }
-            if(toInsert.size()>0)
-                headMapper.batchInsert(toInsert);
-            if(toUpdateUserIds.size()>0)
-            {
-                LambdaUpdateWrapper<HeadMessage> wrapper = new LambdaUpdateWrapper<>();
-                wrapper.set(HeadMessage::getTime,model.getTime()).set(HeadMessage::getContent,model.getContent())
-                        .in(HeadMessage::getUserId,toUpdateUserIds).eq(HeadMessage::getContactId,model.getContactId());
-                headMapper.update(wrapper);
-            }
-            return res;
-        }
- */

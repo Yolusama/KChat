@@ -5,7 +5,7 @@
     <insert id="batchInsert">
         insert into MessageRecord values
         <foreach collection="records" item="r" separator="," >
-            (null,#{r.userId},#{r.contactId},#{r.messageId})
+            (null,#{r.userId},#{r.contactId},#{r.messageId},#{r.userSent},#{r.filePath},#{r.downloaded})
         </foreach>
     </insert>
 </mapper>

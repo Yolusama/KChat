@@ -1,11 +1,11 @@
 package KChat.DbOption.Service;
 
-import KChat.Common.Pair;
 import KChat.Entity.VO.ChatMessageVO;
 import KChat.Entity.VO.HeadMessageVO;
 import KChat.Entity.VO.PagedData;
 import KChat.Model.ChatMessageModel;
 import KChat.Model.HeadMessageModel;
+import KChat.Model.MessageRecordModel;
 import KChat.Service.FileService;
 import KChat.Service.MQMsgProducer;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,5 +21,6 @@ public interface IChatMessageService {
                                              FileService fileService);
     Long createMessage(ChatMessageModel model,MQMsgProducer msgProducer);
     void createOfflineMessage(ChatMessageModel model);
-    Pair<String,String> uploadFile (String suffix, MultipartFile file, FileService fileService);
+    String uploadFile (String suffix, MultipartFile file, FileService fileService);
+    void updateFilePath(MessageRecordModel model,MQMsgProducer msgProducer);
 }

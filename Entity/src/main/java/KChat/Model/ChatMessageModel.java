@@ -15,4 +15,6 @@ public class ChatMessageModel {
     private Integer type;
     private String fileName;
     private Long fileSize;
+    private String filePath;
+    private Boolean downloaded;
 }

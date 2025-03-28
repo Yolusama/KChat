@@ -20,6 +20,8 @@ public class ChatMessageVO {
     private String filePath;
     private Long fileSize;
     private Date time;
+    private Boolean downloaded;
+    private Long recordId;
 
     public Boolean fileTimeOut(){
         if(fileName == null)return null;

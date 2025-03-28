@@ -3,8 +3,8 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="KChat.DbOption.Mapper.ChatMessageMapper">
     <select id="getChatMessages" resultType="KChat.Entity.VO.ChatMessageVO">
-        select cm.id,mr.userId,mr.contactId,u.nickname as contactName,u.avatar as contactAvatar,
-        cm.content,cm.fileName,cm.fileSize,cm.type,cm.time from User u
+        select cm.id,mr.userId,mr.contactId,u.nickname as contactName,u.avatar as contactAvatar,mr.id as recordId,
+        cm.content,cm.fileName,cm.fileSize,mr.filePath,cm.type,cm.time,mr.downloaded from User u
           join MessageRecord mr on mr.contactId = u.id
              join ChatMessage cm on cm.id = mr.messageId
           <where>
@@ -15,18 +15,16 @@
             <if test="userId==contactId">
                 mr.userId = #{userId} and mr.contactId = #{contactId}
             </if>
-            and mr.userDelete = 0
           </where>
          order by cm.time
     </select>
 
     <select id="getGroupMessages" resultType="KChat.Entity.VO.ChatMessageVO">
-        select cm.id,mr.userId,mr.contactId,u.nickname as contactName,u.avatar as contactAvatar,
-               cm.content,cm.fileName,cm.filePath,cm.fileSize,cm.type,cm.time from ChatMessage cm
-               join MessageRecord mr on cm.id = mr.messageId
+        select cm.id,mr.userId,mr.groupId as contactId,u.nickname as contactName,u.avatar as contactAvatar,mr.id as recordId,
+               cm.content,cm.fileName,mr.filePath,cm.fileSize,cm.type,cm.time,mr.downloaded from ChatMessage cm
+               join GroupMessageRecord mr on cm.id = mr.messageId
                  join User u on u.id = mr.userId
-                  left join GroupMessageRecord gmr on gmr.recordId = mr.id
-             where mr.contactId like 'G%' and mr.contactId = #{groupId} and gmr.memberId = #{userId}
+             where mr.groupId = #{groupId} and mr.memberId = #{userId}
         order by cm.time
     </select>
 
@@ -38,11 +36,10 @@
            group by hm.id
         union
         select hm.id as headMessageId,count(1) as unReadCount from HeadMessage hm
-                join MessageRecord mr on mr.userId = hm.userId and mr.contactId = hm.contactId
-                 join ChatMessage cm on cm.id = mr.messageId
-                    left join GroupMessageRecord gmr on gmr.recordId = mr.id
+                join GroupMessageRecord mr on mr.userId = hm.userId and mr.groupId = hm.contactId
+                  join ChatMessage cm on cm.id = mr.messageId
                    where cm.handled = 0 and hm.userId = #{userId} and mr.userId != #{userId}
-                            and hm.contactId like 'G%' and mr.userDelete = 0
+                            and hm.contactId like 'G%'
            group by hm.id
     </select>
 </mapper>

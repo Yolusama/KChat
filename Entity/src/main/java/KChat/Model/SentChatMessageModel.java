@@ -15,6 +15,7 @@ public class SentChatMessageModel {
     private Integer type;
     private String fileName;
     private String fileSize;
+    private String filePath;
     private String image;
     private String contactAvatar;
     private String contactName;
@@ -22,4 +23,5 @@ public class SentChatMessageModel {
     private Long applyId;
     private Integer applyStatus;
     private String userName;
+    private Boolean downloaded;
 }

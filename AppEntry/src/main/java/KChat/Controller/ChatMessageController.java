@@ -1,6 +1,5 @@
 package KChat.Controller;
 
-import KChat.Common.Pair;
 import KChat.DbOption.Service.IChatMessageService;
 import KChat.DbOption.ServiceImpl.ChatMessageService;
 import KChat.Entity.VO.ChatMessageVO;
@@ -8,6 +7,7 @@ import KChat.Entity.VO.HeadMessageVO;
 import KChat.Entity.VO.PagedData;
 import KChat.Model.ChatMessageModel;
 import KChat.Model.HeadMessageModel;
+import KChat.Model.MessageRecordModel;
 import KChat.Result.ActionResult;
 import KChat.Service.FileService;
 import KChat.Service.MQMsgProducer;
@@ -77,7 +77,7 @@ public class ChatMessageController extends ControllerBase{
     }
 
     @PostMapping("/UploadFile")
-    public ActionResult<Pair<String,String>> UploadFile(@RequestPart("file") MultipartFile file,
+    public ActionResult<String> UploadFile(@RequestPart("file") MultipartFile file,
                                          @RequestPart("suffix") String suffix){
         return successWithData(chatMessageService.uploadFile(suffix,file,fileService));
     }
@@ -85,5 +85,11 @@ public class ChatMessageController extends ControllerBase{
     @GetMapping("/GetCacheFile")
     public HttpEntity<byte[]> GetCacheFile(@RequestParam String fileName){
         return fileResult(fileName,fileService.getCacheFileBytes(fileName));
+    }
+
+    @PatchMapping("/UpdateFilePath")
+    public ActionResult UpdateFilePath(@RequestBody MessageRecordModel model){
+        chatMessageService.updateFilePath(model,msgProducer);
+        return ok();
     }
 }

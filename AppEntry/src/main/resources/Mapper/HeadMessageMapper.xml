@@ -3,7 +3,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="KChat.DbOption.Mapper.HeadMessageMapper">
     <insert id="batchInsert">
-        insert into HeadMessage values
+        insert into HeadMessage (id,userId,contactId,content,time) values
         <foreach collection="messages" item="m" separator="," >
             (null,#{m.userId},#{m.contactId},#{m.content},#{m.time})
         </foreach>
@@ -15,9 +15,15 @@
                  where hm.userId = #{userId}
      union
       select hm.id,hm.content,hm.contactId,g.name as contactName,g.avatar as contactAvatar,hm.time,
-             u.nickname as userName
+            (
+                select u.nickname from User u
+                     join GroupMessageRecord mr on u.id = mr.memberId
+                    join ChatMessage cm on cm.id = mr.messageId
+                       where mr.selfRecord = 1
+                      order by cm.time desc limit 1
+                ) as userName
         from UserGroup g join HeadMessage hm on g.id = hm.contactId
-        join User u on u.id = hm.userId
+             join User u on u.id = hm.userId
           where hm.userId = #{userId}
     </select>
 
