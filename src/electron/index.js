@@ -1,9 +1,10 @@
 import axios from "axios";
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
 import fs from "fs"
 import path from "path";
 
 const fileStorePath = "AppData";
+const downloadPath = app.getPath("downloads");
 
 function processCorresponse(window) {
   ipcMain.on("minimize", () => {
@@ -65,15 +66,69 @@ function handleRenderInvoke() {
     })
   });
 
-  ipcMain.handle("fileExists",(event,account,fileName)=>{
+  ipcMain.handle("fileExists", (event, account, fileName) => {
     const pathToRead = `${fileStorePath}/${account}/${fileName}`;
-    return new Promise((resolve,reject)=>{
-      try{
+    return new Promise((resolve, reject) => {
+      try {
         resolve(fs.existsSync(pathToRead));
       }
-      catch(e){
+      catch (e) {
         reject(e);
       }
+    });
+  });
+
+  ipcMain.handle("downloadPath", () => {
+    return new Promise((resolve, reject) => {
+      try {
+        resolve(downloadPath);
+      }
+      catch (e) {
+        reject(e);
+      }
+    });
+  });
+
+  ipcMain.handle("openFileInFolder", (event, path) => {
+    return new Promise((resolve, reject) => {
+      try{
+      if (!fs.existsSync(path)) resolve(false);
+        shell.showItemInFolder(path);
+        resolve(true);
+    }
+    catch(e){
+      reject(e);
+    }
+    });
+
+  });
+
+  ipcMain.handle("readClientFile", (event, path) => {
+    return new Promise((resolve, reject) => {
+      fs.readFile(path, { encoding: null }, (err, data) => {
+        if (err) reject(err);
+        else resolve(data);
+      })
+    });
+  });
+
+  ipcMain.handle("clientFileExists", (event, path) => {
+    return new Promise((resolve, reject) => {
+      try {
+        resolve(fs.existsSync(path));
+      }
+      catch (e) {
+        reject(e);
+      }
+    });
+  });
+
+  ipcMain.handle("writeClientFile", (event, path, content) => {
+    return new Promise((resolve, reject) => {
+      fs.writeFile(path, content, {}, err => {
+        if (err) reject(err);
+        else resolve();
+      });
     });
   });
 
@@ -159,6 +214,22 @@ const createWindow = () => {
   });
 
   processCorresponse(win);
+  ipcMain.handle("openDialog", (event, mode) => {
+    return new Promise((resolve, reject) => {
+      const filters = mode.video ? { extentions: ["mkv", "avi", "mp4", "webm", "ogg"] } : {};
+      if (mode.open)
+        dialog.showOpenDialog(win, {
+          title: "上传文件", filters: filters
+        }).then(res => {
+          if (res.canceled) return;
+          resolve(res.filePaths[0]);
+        }).catch(err => reject(err));
+      if (mode.save)
+        dialog.showSaveDialog(win, { title: "保存文件", filters: filters })
+          .then(res => { if (!res.canceled) resolve(res.filePath) }).catch(err => reject(err));
+    });
+
+  });
 
   win.on("close", async (event) => {
     if (win.userOption == undefined) return;

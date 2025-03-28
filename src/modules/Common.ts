@@ -108,7 +108,8 @@ export interface ChatMessage {
 export const MessageType = {
     common: 1,
     image: 2,
-    file: 3
+    video:3,
+    file: 4
 }
 
 export class PageOption {
@@ -170,4 +171,19 @@ export function playNotifyAudio(){
     audio.muted = false;
     audio.volume = 1;
     audio.play().catch(err=>console.log(err));
+}
+
+export const KB = 1024;
+export const MB = KB*KB;
+export const GB = MB*MB;
+
+export function getFileSize(fileSize:number){
+    if(fileSize<KB)
+        return `${fileSize}B`;
+    else if(fileSize>=KB&&fileSize<MB)
+        return `${(fileSize/KB).toFixed(1)}KB`;
+    else if(fileSize>=MB&&fileSize<=GB)
+        return `${(fileSize/MB).toFixed(1)}MB`;
+    else
+       return `${(fileSize/GB).toFixed(1)}GB`;
 }

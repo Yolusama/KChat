@@ -15,6 +15,10 @@ export function imgSrc(imgName:string){
    return `${baseUrl}/img/${imgName}`;
 }
 
+export function fileSrc(fileName:string){
+  return `${baseUrl}/file/${fileName}`;
+}
+
 export async function RequestAsync(url:string,type:string,data:any,headers:Record<string,any>){
   const option:Record<string,any> = {};
   if(data!=null)

@@ -59,7 +59,7 @@ body{
 
 .text-overflow{
   overflow: hidden;
-  text-wrap: no-wrap;
+  text-wrap: nowrap;
   text-overflow: ellipsis;
 }
 

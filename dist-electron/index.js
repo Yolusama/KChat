@@ -8559,6 +8559,7 @@ const {
   mergeConfig
 } = axios;
 const fileStorePath = "AppData";
+const downloadPath = electron.app.getPath("downloads");
 function processCorresponse(window2) {
   electron.ipcMain.on("minimize", () => {
     window2.minimize();
@@ -8621,6 +8622,51 @@ function handleRenderInvoke() {
       }
     });
   });
+  electron.ipcMain.handle("downloadPath", () => {
+    return new Promise((resolve, reject) => {
+      try {
+        resolve(downloadPath);
+      } catch (e) {
+        reject(e);
+      }
+    });
+  });
+  electron.ipcMain.handle("openFileInFolder", (event, path) => {
+    return new Promise((resolve, reject) => {
+      try {
+        if (!fs.existsSync(path)) resolve(false);
+        electron.shell.showItemInFolder(path);
+        resolve(true);
+      } catch (e) {
+        reject(e);
+      }
+    });
+  });
+  electron.ipcMain.handle("readClientFile", (event, path) => {
+    return new Promise((resolve, reject) => {
+      fs.readFile(path, { encoding: null }, (err, data) => {
+        if (err) reject(err);
+        else resolve(data);
+      });
+    });
+  });
+  electron.ipcMain.handle("clientFileExists", (event, path) => {
+    return new Promise((resolve, reject) => {
+      try {
+        resolve(fs.existsSync(path));
+      } catch (e) {
+        reject(e);
+      }
+    });
+  });
+  electron.ipcMain.handle("writeClientFile", (event, path, content) => {
+    return new Promise((resolve, reject) => {
+      fs.writeFile(path, content, {}, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  });
 }
 function subWinCallback(subWin) {
   const eventFuncs = {
@@ -8679,6 +8725,23 @@ const createWindow = () => {
     resizable: false
   });
   processCorresponse(win);
+  electron.ipcMain.handle("openDialog", (event, mode) => {
+    return new Promise((resolve, reject) => {
+      const filters = mode.video ? { extentions: ["mkv", "avi", "mp4", "webm", "ogg"] } : {};
+      if (mode.open)
+        electron.dialog.showOpenDialog(win, {
+          title: "上传文件",
+          filters
+        }).then((res) => {
+          if (res.canceled) return;
+          resolve(res.filePaths[0]);
+        }).catch((err) => reject(err));
+      if (mode.save)
+        electron.dialog.showSaveDialog(win, { title: "保存文件", filters }).then((res) => {
+          if (!res.canceled) resolve(res.filePath);
+        }).catch((err) => reject(err));
+    });
+  });
   win.on("close", async (event) => {
     if (win.userOption == void 0) return;
     const { userId, token } = win.userOption;

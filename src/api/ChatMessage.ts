@@ -38,7 +38,6 @@ export function UploadFile(file:any,successCallback:(res:Result)=>void){
     const data = new FormData();
     data.append("file",file);
     data.append("suffix",getFileSuffix(file.name));
-
     api.post(chatApiUrl("/UploadFile"),authorization(true),data,successCallback);
 }
 
@@ -52,4 +51,11 @@ export async function GetCacheFile(fileName:string,result:any) {
     }
     else
        result.data = Buffer.from(res);
+}
+
+export function UpdateFilePath(messageId:number,filePath:string,userId:string,contactId:string,successCallback:(res:Result)=>void){
+    const model = {
+        filePath,userId,contactId,messageId
+    };
+    api.patch(chatApiUrl("/UpdateFilePath"),authorization(),model,successCallback);
 }

@@ -14,7 +14,7 @@
                             'color:white' : ''">{{ timeWithoutSeconds(new Date(message.time)) }}</span>
                     </div>
                     <div class="between">
-                        <span class="text-overflow content" :style="currentHeadMessage != null && currentHeadMessage.id == message.id ?
+                        <span class="text-overflow head-content" :style="currentHeadMessage != null && currentHeadMessage.id == message.id ?
                             'color:white' : ''">{{ isGroupMsg(message.contactId) ? `${message.userName}:
                             ${message.content}` :
                                 message.content }}</span>
@@ -31,8 +31,8 @@
             </div>
             <el-scrollbar style="height:60%;padding-right: 2%;" class="no-drag">
                 <div class="message" v-for="message in msgPageOpt.data" :key="message.id" ref="messagesContent">
+                    <span class="time">{{ new Date(message.time).toLocaleString() }}</span>
                     <div class="content user" v-if="message.userId == state.user.id && !isGroupMsg(message.contactId)">
-                        <span class="time">{{ new Date(message.time).toLocaleString() }}</span>
                         <div class="user-info right">
                             <div class="message-body" v-html="message.content"
                                 v-if="message.type == MessageType.common">
@@ -42,18 +42,39 @@
                                 fit="fill">
                                 <template #error>
                                     <div class="err-img">
-                                        <el-icon>
+                                        <el-icon :size="24">
                                             <Picture></Picture>
                                         </el-icon>
                                     </div>
                                 </template>
                             </el-image>
+                            <div v-if="message.type == MessageType.file" class="msg-file no-drag">
+                                <el-icon color="rgb(0,75,235)" :size="24" @click="seeFileInFolder(message)">
+                                    <Document />
+                                </el-icon>
+                                <div class="file-info">
+                                    <span class="nickname text-overflow">{{ message.fileName }}</span>
+                                    <span class="size">{{ getFileSize(message.fileSize) }}&nbsp;
+                                        .{{ getFileSuffix(message.fileName) }}</span>
+                                </div>
+                                <el-icon v-if="message.downloaded" :size="24" @click="seeFileInFolder(message)">
+                                    <Folder />
+                                </el-icon>
+                                <span v-if="expire(message.time)">已过期</span>
+                            </div>
+                            <div v-if="message.type == MessageType.video" class="msg-video">
+                                <h4>视频：</h4>
+                                <video :src="message.filePath" muted="true" autoplay="false"
+                                    @play="toPlay(message)"></video>
+                                <el-icon v-if="message.downloaded" :size="24" @click="seeFileInFolder(message)">
+                                    <Folder />
+                                </el-icon>
+                            </div>
                             <img :src="imgSrc(state.user.avatar)" class="avatar">
                         </div>
                     </div>
                     <div class="content contactor"
                         v-if="message.userId != state.user.id && !isGroupMsg(message.contactId)">
-                        <span class="time">{{ new Date(message.time).toLocaleString() }}</span>
                         <div class="user-info left">
                             <img :src="imgSrc(message.contactAvatar)" class="avatar">
                             <el-image class="msg-img" :src="imageMsgDisplay(message)"
@@ -61,14 +82,46 @@
                                 fit="fill">
                                 <template #error>
                                     <div class="err-img">
-                                        <el-icon>
+                                        <el-icon :size="24">
                                             <Picture></Picture>
                                         </el-icon>
                                     </div>
                                 </template>
                             </el-image>
+                            <div v-if="message.type == MessageType.file" class="msg-file">
+                                <el-icon color="white" :size="24" @click="seeFileInFolder(message)">
+                                    <Document />
+                                </el-icon>
+                                <div class="file-info">
+                                    <span class="nickname text-overflow" style="color:white">{{ message.fileName
+                                        }}</span>
+                                    <span class="size">{{ getFileSize(message.fileSize) }}&nbsp;
+                                        .{{ getFileSuffix(message.fileName) }}</span>
+                                </div>
+                                <el-icon v-if="!message.downloaded && !expire(message.time)" :size="24"
+                                    @click="downloadFile(message)" color="white">
+                                    <Download />
+                                </el-icon>
+                                <el-icon v-if="message.downloaded" :size="24" color="white"
+                                    @click="seeFileInFolder(message)">
+                                    <Folder />
+                                </el-icon>
+                                <span v-if="expire(message.time)" class="size">已过期</span>
+                            </div>
                             <div class="message-body" v-html="message.content"
                                 v-if="message.type == MessageType.common">
+                            </div>
+                            <div v-if="message.type == MessageType.video" class="msg-video">
+                                <h4>视频：</h4>
+                                <video :src="fileSrc(message.fileName)" muted="true" autoplay="false"
+                                    @play="toPlay(message)"></video>
+                                <el-icon v-if="message.downloaded" :size="24" @click="seeFileInFolder(message)">
+                                    <Folder />
+                                </el-icon>
+                                <el-icon v-if="!message.downloaded && !expire(message.time)" :size="24"
+                                    @click="downloadFile(message)" color="white">
+                                    <Download />
+                                </el-icon>
                             </div>
                         </div>
                     </div>
@@ -76,7 +129,33 @@
                         v-if="message.userId == state.user.id && isGroupMsg(message.contactId)">
                         <div class="group-user-self">
                             <span class="nickname text-overflow">{{ state.user.nickname }}</span>
-                            <div class="message-body" v-html="message.content"></div>
+                            <div class="message-body" v-html="message.content"
+                                v-if="message.type == MessageType.common"></div>
+                            <el-image class="msg-img" :src="imageMsgDisplay(message)"
+                                :preview-src-list="[imageMsgDisplay(message)]" v-if="message.type == MessageType.image"
+                                fit="fill">
+                                <template #error>
+                                    <div class="err-img">
+                                        <el-icon :size="24">
+                                            <Picture></Picture>
+                                        </el-icon>
+                                    </div>
+                                </template>
+                            </el-image>
+                            <div v-if="message.type == MessageType.file" class="msg-file no-drag">
+                                <el-icon color="rgb(0,75,235)" :size="24" @click="seeFileInFolder(message)">
+                                    <Document />
+                                </el-icon>
+                                <div class="file-info">
+                                    <span class="nickname text-overflow">{{ message.fileName }}</span>
+                                    <span class="size">{{ getFileSize(message.fileSize) }}&nbsp;
+                                        .{{ getFileSuffix(message.fileName) }}</span>
+                                </div>
+                                <el-icon v-if="message.downloaded" :size="24" @click="seeFileInFolder(message)">
+                                    <Folder />
+                                </el-icon>
+                                <span v-if="expire(message.time)">已过期</span>
+                            </div>
                         </div>
                         <img :src="imgSrc(state.user.avatar)" class="avatar">
                     </div>
@@ -85,7 +164,40 @@
                         <img :src="imgSrc(state.user.avatar)" class="avatar">
                         <div class="group-contactor-self">
                             <span class="nickname text-overflow">{{ message.contactName }}</span>
-                            <div class="message-body" v-html="message.content"></div>
+                            <div class="message-body" v-html="message.content"
+                                v-if="message.type == MessageType.common">
+                            </div>
+                            <el-image class="msg-img" :src="imageMsgDisplay(message)"
+                                :preview-src-list="[imageMsgDisplay(message)]" v-if="message.type == MessageType.image"
+                                fit="fill">
+                                <template #error>
+                                    <div class="err-img">
+                                        <el-icon :size="24">
+                                            <Picture></Picture>
+                                        </el-icon>
+                                    </div>
+                                </template>
+                            </el-image>
+                            <div v-if="message.type == MessageType.file" class="msg-file">
+                                <el-icon color="white" :size="24" @click="seeFileInFolder(message)">
+                                    <Document />
+                                </el-icon>
+                                <div class="file-info">
+                                    <span class="nickname text-overflow" style="color:white">{{ message.fileName
+                                        }}</span>
+                                    <span class="size">{{ getFileSize(message.fileSize) }}&nbsp;
+                                        .{{ getFileSuffix(message.fileName) }}</span>
+                                </div>
+                                <el-icon v-if="!message.downloaded && !expire(message.time)" :size="24"
+                                    @click="downloadFile(message)" color="white">
+                                    <Download />
+                                </el-icon>
+                                <el-icon v-if="message.downloaded" :size="24" color="white"
+                                    @click="seeFileInFolder(message)">
+                                    <Folder />
+                                </el-icon>
+                                <span v-if="expire(message.time)" class="size">已过期</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -96,6 +208,22 @@
                         <label for="pic">
                             <el-icon style="font-size:20px;cursor:pointer">
                                 <Picture />
+                            </el-icon>
+                        </label>
+                    </el-tooltip>
+                    <el-tooltip effect="dark" content="发送文件" placement="top">
+                        <label for="file">
+                            <el-icon style="font-size:20px;cursor:pointer"
+                                @click="chooseFile({ save: false, open: true, video: false })">
+                                <Files />
+                            </el-icon>
+                        </label>
+                    </el-tooltip>
+                    <el-tooltip effect="dark" content="发送视频" placement="top">
+                        <label for="video">
+                            <el-icon style="font-size:20px;cursor:pointer"
+                                @click="chooseFile({ save: false, open: true, video: true })">
+                                <VideoPlay />
                             </el-icon>
                         </label>
                     </el-tooltip>
@@ -114,11 +242,12 @@
 <script lang="ts" setup>
 import { reactive, onMounted, ref, onBeforeUnmount } from 'vue';
 import webSocket from '../modules/WebSocket';
-import { copy, getFileSuffix, MessageType, PageOption, playNotifyAudio, timeWithoutSeconds } from '../modules/Common';
-import { CreateMessage, FreshHeadMessage, GetCacheFile, GetHeadMessages, GetMessages, UploadFile } from '../api/ChatMessage';
+import { copy, getFileSize, getFileSuffix, MessageType, PageOption, playNotifyAudio, timeWithoutSeconds } from '../modules/Common';
+import { CreateMessage, FreshHeadMessage, GetCacheFile, GetHeadMessages, GetMessages, UpdateFilePath, UploadFile } from '../api/ChatMessage';
 import stateStroge from '../modules/StateStorage';
-import { imgSrc } from '../modules/Request';
+import { fileSrc, imgSrc } from '../modules/Request';
 import { ipcRenderer } from 'electron';
+import { ElMessage } from 'element-plus';
 
 const state = reactive<any>({
     headMessages: [],
@@ -127,7 +256,8 @@ const state = reactive<any>({
     content: "",
     file: {
         name: "",
-        size: 0
+        size: 0,
+        path: null
     }
 });
 
@@ -146,13 +276,19 @@ const msgPageOpt = ref<PageOption>(new PageOption(1, 15, []));
 
 function messageHandle(event: MessageEvent<any>) {
     const msg = JSON.parse(event.data);
-    playNotifyAudio();
     if (currentHeadMessage.value != null && (currentHeadMessage.value.contactId == msg.userId ||
         currentHeadMessage.value.contactId == msg.contactId)) {
         const { contactName, contactAvatar } = currentHeadMessage.value;
         if (!isGroupMsg(msg.contactId)) {
             msg.contactName = contactName;
             msg.contactAvatar = contactAvatar;
+            playNotifyAudio();
+        }
+        else {
+            if (msg.userId != state.user.id) {
+                playNotifyAudio();
+                msg.downloaded = false;
+            }
         }
         if (msgPageOpt.value.data.length >= msgPageOpt.value.size) {
             msgPageOpt.value.data.splice(0, 1);
@@ -163,7 +299,6 @@ function messageHandle(event: MessageEvent<any>) {
         if (msg.type == MessageType.image) {
             const res: any = {};
             GetCacheFile(msg.fileName, res).then(async () => {
-                console.log(res);
                 await ipcRenderer.invoke("writeFile", state.user.account, msg.fileName, res.data);
             });
         }
@@ -174,6 +309,8 @@ function messageHandle(event: MessageEvent<any>) {
         toFresh.userId = msg.contactId;
         toFresh.contactId = msg.userId;
     }
+    else
+        toFresh.userId = state.user.id;
     freshHeadMessage(toFresh);
 }
 
@@ -188,15 +325,29 @@ function sendMessage(headMessage: any, type: Number) {
         contactName: contactName,
         contactAvatar: contactAvatar
     };
-    if (type == MessageType.image) {
+    if (type != MessageType.common) {
         message.fileName = state.file.name;
         message.fileSize = state.file.size;
-        message.content = "图片";
+        message.filePath = state.file.path;
+        if (type == MessageType.image)
+            message.content = "图片";
+        else if (type == MessageType.video) {
+            message.content = "视频";
+            message.downloaded = true;
+        }
+        else {
+            message.content = "文件";
+            message.downloaded = true;
+        }
+    }
+    if (isGroupMsg(message.contactId)) {
+        message.userName = state.user.nickname;
+        message.contactName = state.user.nickname;
     }
     webSocket.sendMessage(message, () => {
         CreateMessage(message, res => {
-            const data = res.data;
             if (!isGroupMsg(message.contactId)) {
+                const data = res.data;
                 message.id = data;
                 if (msgPageOpt.value.data.length >= msgPageOpt.value.size) {
                     msgPageOpt.value.data.splice(0, 1);
@@ -204,13 +355,15 @@ function sendMessage(headMessage: any, type: Number) {
                 }
                 else
                     msgPageOpt.value.data.push(message);
+
                 freshHeadMessage(message);
             }
             state.content = "";
             if (type != MessageType.common) {
                 state.file = {
                     name: "",
-                    size: 0
+                    size: 0,
+                    path: null
                 };
             }
         });
@@ -242,6 +395,7 @@ function freshHeadMessage(msg: any) {
     headMessage.contactAvatar = msg.contactAvatar;
     headMessage.contactName = msg.contactName;
     headMessage.content = msg.content;
+    headMessage.userName = msg.userName;
     headMessage.time = new Date();
     FreshHeadMessage(headMessage, (res) => {
         const id = res.data;
@@ -299,7 +453,7 @@ function imageMsgDisplay(message: any) {
         else {
             const data: any = {};
             GetCacheFile(fileName, data).then(() => {
-                ipcRenderer.invoke("writeFile", account, fileName, data.data).then(()=>{
+                ipcRenderer.invoke("writeFile", account, fileName, data.data).then(() => {
                     message.image = `data:image/${getFileSuffix(fileName)};base64,${data.data.toString("base64")}`;
                 });
             });
@@ -322,6 +476,55 @@ function chooseImage(e: any) {
             sendMessage(currentHeadMessage.value, MessageType.image);
         });
     });
+}
+
+function chooseFile(mode: any) {
+    ipcRenderer.invoke("openDialog", mode).then((path) => {
+        ipcRenderer.invoke("readClientFile", path).then(data => {
+            const file = new File([data], path, {});
+            UploadFile(file, res => {
+                state.file.name = res.data;
+                state.file.path = path;
+                state.file.size = file.size;
+                sendMessage(currentHeadMessage.value, MessageType.file);
+            });
+        });
+    });
+}
+
+function expire(message: any) {
+    const today = new Date();
+    today.setDate(today.getDate() - 7);
+    return today.getTime() > message.time;
+}
+
+function downloadFile(message: any) {
+    ipcRenderer.invoke("openDialog", { save: true, open: false, video: false }).then(async (res) => {
+        const filePath = res;
+        const data: any = {};
+        await GetCacheFile(message.fileName, data);
+        ipcRenderer.invoke("writeClientFile", filePath, data.data).then(() => {
+            UpdateFilePath(message.id, filePath, message.userId, message.contactId, () => {
+                message.filePath = filePath;
+                message.downloaded = true;
+            });
+        });
+    });
+}
+
+function seeFileInFolder(message: any) {
+    if (!(state.user.id == message.userId || message.downloaded)) return;
+    ipcRenderer.invoke("openFileInFolder", message.filePath).then((ok) => {
+        if (!ok)
+            ElMessage({
+                message: "文件已被移除...",
+                type: "warning"
+            });
+    });
+}
+
+function toPlay(message: any) {
+
 }
 
 onBeforeUnmount(() => {
@@ -369,16 +572,18 @@ onBeforeUnmount(() => {
 
 .head-message .nickname {
     color: black;
-    font-size: 15px;
+    font-size: 13px;
+    width: 70%;
+    text-align: left;
 }
 
 .head-message .info {
-    margin-left: 5px;
-    width: 100%;
+    margin-left: 4px;
+    width: calc(100% - 45px);
 }
 
-.head-message .info .content {
-    width: 96%;
+.head-message .info .head-content {
+    width: 90%;
     font-size: 13px;
     color: gray;
     text-align: left;
@@ -518,6 +723,7 @@ onBeforeUnmount(() => {
 #message .head-message .time {
     font-size: 12px;
     color: gray;
+    width: 20%;
     margin-right: 5%;
 }
 
@@ -575,6 +781,10 @@ onBeforeUnmount(() => {
     padding-left: 20px;
 }
 
+.send-list label {
+    margin-right: 5%;
+}
+
 #message .msg-img {
     max-width: 80%;
     max-height: 40vh;
@@ -593,11 +803,62 @@ onBeforeUnmount(() => {
     height: 100%;
 }
 
-.right .msg-img {
+.right .msg-img,
+.group-user-self .msg-img {
     margin-right: 1%;
 }
 
-.left .msg-img{
+#message .msg-file {
+    display: flex;
+    align-items: center;
+    border-radius: 5px;
+    width: 250px;
+    justify-content: flex-start;
+}
+
+.left .msg-img,
+.group-contactor-self .msg-img {
     margin-left: 1%;
+}
+
+.right .msg-file,
+.group-user-self .msg-file {
+    margin-right: 1%;
+    background-color: white;
+}
+
+.left .msg-file,
+.group-contactor-self .msg-file {
+    margin-left: 1%;
+    background-color: rgb(0, 125, 225);
+}
+
+#message .message .file-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 80%;
+}
+
+#message .file-info .nickname {
+    width: 90%;
+}
+
+.file-info .size {
+    color: gray;
+    font-size: 14px;
+}
+
+.left .file-info .size,
+.group-contactor-self .file-info .size {
+    color: white;
+}
+
+#message .file-info .left .nickname {
+    color: white;
+}
+
+.msg-file .el-icon {
+    cursor: pointer;
 }
 </style>
