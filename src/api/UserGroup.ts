@@ -25,3 +25,7 @@ export function UploadGroupAvatar(groupId:string,avatar:string,file:any,successC
 export function SearchGroup(userId:string,identifier:string,successCallback:(res:Result)=>void){
     api.get(groupApiUrl(`/SearchGroup/${userId}?identifier=${identifier}`),authorization(),successCallback);
 }
+
+export function ChangeDescription(groupId:string,description:string,successCallback:(res:Result)=>void){
+    api.patch(groupApiUrl(`/ChangeDescription/${groupId}?description=${description}`),authorization(),{},successCallback);
+}

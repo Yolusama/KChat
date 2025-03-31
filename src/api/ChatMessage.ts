@@ -53,9 +53,6 @@ export async function GetCacheFile(fileName:string,result:any) {
        result.data = Buffer.from(res);
 }
 
-export function UpdateFilePath(messageId:number,filePath:string,userId:string,contactId:string,successCallback:(res:Result)=>void){
-    const model = {
-        filePath,userId,contactId,messageId
-    };
+export function UpdateFilePath(model:any,successCallback:(res:Result)=>void){
     api.patch(chatApiUrl("/UpdateFilePath"),authorization(),model,successCallback);
 }

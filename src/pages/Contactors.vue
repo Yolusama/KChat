@@ -14,6 +14,47 @@
                   </el-icon></div>
             </el-badge>
          </div>
+         <el-radio-group v-model="state.view">
+            <el-radio-button :value="0" label="好友"></el-radio-button>
+            <el-radio-button :value="1" label="群组"></el-radio-button>
+         </el-radio-group>
+         <el-scroll-bar style="height:78vh;width:100%;">
+            <el-collapse class="friends" v-show="state.view == 0">
+               <el-collapse-item v-for="(data, label) in state.friends" :key="JSON.parse(label.toString()).id">
+                  <template #title>
+                     <div class="between">
+                        <span style="font-size: 14px;"> {{ JSON.parse(label.toString()).name }}</span>
+                        <span style="color:gray">{{ data.length }}</span>
+                     </div>
+                  </template>
+                  <div class="friend" v-for="(friend, index) in data" :key="index" @click="seeContactInfo(friend)">
+                     <el-avatar :src="imgSrc(friend.avatar)"></el-avatar>
+                     <div style="display:flex;flex-direction: column;margin-left:4px;padding:0 3px">
+                        <span class="name text-overflow">{{ friend.remark != null ? friend.nickname + '(' +
+                           friend.remark + ')' :
+                           friend.nickname }}</span>
+                        <span class="signature text-overflow"> {{ friend.signature }} </span>
+                     </div>
+                  </div>
+               </el-collapse-item>
+            </el-collapse>
+            <el-collapse class="groups" v-show="state.view == 1">
+               <el-collapse-item :name="name" v-for="(data, name) in state.groups" :key="name">
+                  <template #title>
+                     <div class="between">
+                        <span style="font-size:14px">{{ name }}</span>
+                        <span style="color:gray">{{ data.length }}</span>
+                     </div>
+                  </template>
+                  <div class="group" v-for="(group, index) in data" :key="index" @click="seeContactInfo(group)">
+                     <el-avatar :src="imgSrc(group.avatar)"></el-avatar>
+                     <span class="name text-oveflow">{{ group.remark != null ? group.name + '(' +
+                           group.remark + ')' :
+                           group.name }}</span>
+                  </div>
+               </el-collapse-item>
+            </el-collapse>
+         </el-scroll-bar>
       </div>
       <div class="content">
          <div class="user-apply" v-if="state.showUserApply">
@@ -88,8 +129,97 @@
                      </el-dropdown-menu>
                   </template>
                </el-dropdown>
-
                <span v-if="apply.contactStatus != 1">{{ groupStatusText(apply.contactStatus) }}</span>
+            </div>
+         </div>
+         <div v-if="state.showContactInfo" class="contact no-drag">
+            <div class="info">
+               <el-image style="width: 100px; height: 100px;border-radius: 50%;" :src="imgSrc(state.data.avatar)"
+                  :preview-src-list="[imgSrc(state.data.avatar)]"></el-image>
+               <div class="detail">
+                  <h3 style="text-align: left;">{{ isGroup(state.data.id) ? state.data.name : state.data.nickname }}
+                  </h3>
+                  <div v-if="isGroup(state.data.id)">
+                     <span>群id&nbsp;{{ state.data.id }}</span>
+                  </div>
+                  <div v-if="isGroup(state.data.id)"><el-icon><User/></el-icon>&nbsp;
+                  {{ state.data.currentCount }}/{{ state.data.size }}</div>
+                  <div v-if="!isGroup(state.data.id)">账号&nbsp;{{ state.data.account }}</div>
+                  <div v-if="!isGroup(state.data.id)">电子邮箱&nbsp;{{ state.data.email }}</div>
+                  <div v-if="!isGroup(state.data.id)">
+                     性别 {{ state.data.gender == 0 ? "男" : "女" }}
+                  </div>
+               </div>
+            </div>
+            <div class="between">
+               <div class="info-head">
+                  <el-icon :size="18">
+                     <Edit></Edit>
+                  </el-icon>
+                  <span style="font-size:13px">&nbsp; 备注</span>
+               </div>
+               <span @click="remarkEdit" v-if="!state.remarkEdit" class="common">
+                  {{ state.data.remark == null ? "添加备注" : state.data.remark }}
+               </span>
+               <el-input v-model="state.contactRemark" @blur="changeRemark" ref="remarkInput"
+               autofocus
+                v-else size="small" style="width:60%"></el-input>
+            </div>
+            <div class="between" v-if="!isGroup(state.data.id)">
+               <div class="info-head">
+                  <el-icon :size="18">
+                     <UserFilled />
+                  </el-icon>
+                  <span style="font-size:13px">&nbsp; 好友标签</span>
+               </div>
+               <el-select v-model="state.data.labelId" style="width:40%" size="small">
+                  <el-option v-for="item in state.labels" :key="item.id" :label="item.name" :value="item.id">
+                  </el-option>
+               </el-select>
+            </div>
+            <div class="between" v-if="!isGroup(state.data.id)">
+               <div class="info-head">
+                  <el-icon :size="18">
+                     <EditPen />
+                  </el-icon>
+                  <span style="font-size:13px">&nbsp;个性签名</span>
+               </div>
+               <span class="common">
+                  {{ state.data.signature }}
+               </span>
+            </div>
+            <div v-else style="width:70%">
+               <span @click="descriptionEdit" class="common" style="margin-bottom:5px">
+                 群描述信息 
+                     </span>
+               <el-input v-model="state.contactDescription" type="textarea" resize="none" :rows="5"
+                style="margin-bottom: 5px;" @blur="changeDescription"></el-input>
+            </div>
+            <div class="funcs no-drag">
+               <div class="func" v-if="!isGroup(state.data.id)">
+                  <el-icon :size="20">
+                     <Delete />
+                  </el-icon>
+                  <span style="font-size:13px">移除好友</span>
+               </div>
+               <div class="func" v-else>
+                  <el-icon :size="20">
+                     <Delete />
+                  </el-icon>
+                  <span style="font-size:13px">解散群聊</span>
+               </div>
+               <div class="func" v-if="isGroup(state.data.id)&&state.userId!=state.data.ownerId">
+                  <el-icon :size="20">
+                     <Foleder/>
+                  </el-icon>
+                  <span style="font-size:13px">退出群聊</span>
+               </div>
+               <div class="func">
+                  <el-icon :size="20">
+                     <ChatDotSquare />
+                  </el-icon>
+                  <span style="font-size:13px">发消息</span>
+               </div>
             </div>
          </div>
       </div>
@@ -112,24 +242,27 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, reactive } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { GetGroupApplies, GetUserApplies, RemoveContactorCache, SetApplyStatus } from '../api/UserApply';
 import stateStroge from '../modules/StateStorage';
 import { imgSrc } from '../modules/Request';
 import { copy, delayToRun, GroupContactStatus, UserApplyStatus, type HeadMessage } from '../modules/Common';
 import webSocket from '../modules/WebSocket';
-import { CreateLabel, GetUserLabels, IsUserOnline } from '../api/User';
+import { CreateLabel, GetFriends, GetUserLabels, IsUserOnline } from '../api/User';
 import { CreateHeadMessage, CreateMessage, CreateOfflineMessage, FreshHeadMessage } from '../api/ChatMessage';
 import { ElMessageBox } from 'element-plus';
+import { ChangeDescription, GetUserGroups } from '../api/UserGroup';
+import { nextTick } from 'process';
+import { ChangeRemark } from '../api/Common';
 
 const state = reactive<any>({
    showUserApply: false,
    showGroupNotice: false,
-   showUserInfo: false,
+   showContactInfo: false,
    data: [],
    userId: "",
    friends: {},
-   groups: [],
+   groups: {},
    notifyOpt: {
       u: false,
       g: false
@@ -137,8 +270,13 @@ const state = reactive<any>({
    labelId: 0,
    labelShow: false,
    labels: [],
-   selectedApply: null
+   selectedApply: null,
+   view: 0,
+   contactRemark: "",
+   contactDescription:""
 });
+
+const remarkInput = ref<any>(null);
 
 onMounted(() => {
    const user = stateStroge.get("user");
@@ -149,12 +287,20 @@ onMounted(() => {
       state.labels = res.data;
       state.labelId = state.labels[0].id;
    });
+
+   GetFriends(state.userId, res => {
+      state.friends = res.data;
+   });
+
+   GetUserGroups(state.userId, res => {
+      state.groups = res.data;
+   });
 });
 
 function loadUserApplies() {
    state.showUserApply = true;
    state.showGroupNotice = false;
-   state.showUserInfo = false;
+   state.showContactInfo = false;
    state.notifyOpt.u = false;
 
    GetUserApplies(state.userId, res => {
@@ -164,7 +310,6 @@ function loadUserApplies() {
 
 function messageHandle(event: MessageEvent<any>) {
    const data = JSON.parse(event.data);
-   console.log(data);
    if (data.isVerification == undefined || !data.isVerification) return;
    const index = data.contactId.indexOf('G');
    if (index >= 0)
@@ -193,7 +338,7 @@ function freshHeadMessage(data: any) {
 function loadGroupNotices() {
    state.showUserApply = false;
    state.showGroupNotice = true;
-   state.showUserInfo = false;
+   state.showContactInfo = false;
    state.notifyOpt.g = false;
 
    GetGroupApplies(state.userId, res => {
@@ -237,19 +382,37 @@ function aggreUserApply(apply: any) {
             contactAvatar: apply.contactAvatar,
             contactName: apply.contactName
          };
+
+         state.friends[state.labelId].push({
+            id: apply.userId,
+            nickname: apply.contactName,
+            avatar: apply.contactAvatar,
+            signature: apply.signature
+         });
       }
-      if (state.showGroupNotice)
-         {
-            idTo = apply.groupOwnerId;
-            message = {
-               userId: apply.contactId,
-               contactId: apply.groupId,
-               content:apply.info,
-               time:new Date(),
-               contactAvatar: apply.groupAvatar,
-               contactName: apply.groupName
-            };
-         }
+      if (state.showGroupNotice) {
+         idTo = apply.groupOwnerId;
+         message = {
+            userId: apply.contactId,
+            contactId: apply.groupId,
+            content: apply.info,
+            time: new Date(),
+            contactAvatar: apply.groupAvatar,
+            contactName: apply.groupName
+         };
+         if (apply.groupOwnerId == state.userId)
+            state.groups["我的群"].push({
+               id: apply.contactId,
+               name: apply.groupName,
+               avatar: apply.groupAvatar
+            });
+         else
+            state.groups["加入的群"].push({
+               id: apply.contactId,
+               name: apply.groupName,
+               avatar: apply.groupAvatar
+            });
+      }
       IsUserOnline(idTo, res => {
          if (res.data)
             CreateMessage(message, () => {
@@ -341,6 +504,51 @@ function addLabel() {
       .catch(() => {
          return;
       });
+}
+
+function isGroup(contactId: string) {
+   return contactId.includes('G');
+}
+
+function seeContactInfo(contactor: any) {
+   state.showUserApply = false;
+   state.showGroupNotice = false;
+   state.showContactInfo = true;
+
+   state.data = contactor;
+   if(isGroup(state.data.id))
+      state.contactDescription = state.data.description;
+}
+
+function remarkEdit() {
+  state.remarkEdit = true;
+  nextTick(()=>{
+     remarkInput.value.focus();
+   });
+}
+
+function descriptionEdit() {
+   if (state.userId == state.data.ownerId) state.descriptionEdit = true;
+}
+
+function changeRemark(){
+   if(state.data.remark == state.contactRemark){
+      state.remarkEdit = false;
+      return;
+   }
+   ChangeRemark(state.userId,state.data.id,state.contactRemark,()=>{
+      state.data.remark = state.contactRemark;
+      state.contactRemark = "";
+      state.remarkEdit = false;
+   });
+}
+
+function changeDescription(){
+    ChangeDescription(state.data.id,state.contactDescription,()=>{
+       state.data.description = state.contactDescription;
+       state.contactDescription = "";
+       state.descriptionEdit = false;
+    });
 }
 </script>
 
@@ -466,5 +674,109 @@ function addLabel() {
    margin-left: 1%;
    color: rgb(0, 125, 235);
    cursor: pointer;
+}
+
+#contactors .friends,
+#contactors .groups {
+   width: 98%;
+   margin: 0 auto;
+   margin-top: 12px;
+}
+
+.friends .friend {
+   display: flex;
+   align-items: center;
+   height: 50px;
+   padding-left: 1%;
+   cursor: default;
+}
+
+.friends .friend:hover,
+.groups .group:hover {
+   background-color: rgb(248, 248, 248);
+}
+
+.groups .group {
+   display: flex;
+   align-items: center;
+   justify-content: flex-start;
+   padding-left: 1%;
+   height: 50px;
+   cursor: default;
+}
+
+.friend .signature {
+   display: block;
+   height: 20px;
+}
+
+#contactors .friend .name {
+   font-size: 16px;
+}
+
+#contactors .group .name {
+   font-size: 16px;
+   margin-left: 5px;
+   max-width: 85%;
+}
+
+#contactors .contact {
+   display: flex;
+   flex-flow: column nowrap;
+   align-items: center;
+   justify-content: center;
+   padding-top: 5vh;
+   width: 63vw;
+   height: 65vh;
+}
+
+.contact .info {
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   width: 100%;
+}
+
+.contact .info .detail {
+   display: flex;
+   font-size: 13px;
+   flex-flow: column nowrap;
+   justify-content: flex-start;
+   align-items: flex-start;
+   color: gray;
+   margin-left: 1%;
+}
+
+.contact .between {
+   align-items: center;
+   width: 80%;
+}
+
+.contact .funcs {
+   display: flex;
+   justify-content: center;
+   align-items: center;
+}
+
+.funcs .func {
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   margin-left: 7px;
+}
+
+.func:hover {
+   color: rgb(0, 145, 235);
+   cursor: pointer;
+}
+
+.contact .common {
+   font-size: 13px;
+}
+
+.contact .info-head {
+   display: flex;
+   align-items: center;
+   height: 30px;
 }
 </style>

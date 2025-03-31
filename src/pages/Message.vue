@@ -60,12 +60,11 @@
                                 <el-icon v-if="message.downloaded" :size="24" @click="seeFileInFolder(message)">
                                     <Folder />
                                 </el-icon>
-                                <span v-if="expire(message.time)">已过期</span>
+                                <span v-if="expire(message)">已过期</span>
                             </div>
                             <div v-if="message.type == MessageType.video" class="msg-video">
-                                <h4>视频：</h4>
-                                <video :src="message.filePath" muted="true" autoplay="false"
-                                    @play="toPlay(message)"></video>
+                                <video :src="toPlay(message)" muted="true" class="video" controls
+                                   controlslist="nodownload" ></video>
                                 <el-icon v-if="message.downloaded" :size="24" @click="seeFileInFolder(message)">
                                     <Folder />
                                 </el-icon>
@@ -94,11 +93,11 @@
                                 </el-icon>
                                 <div class="file-info">
                                     <span class="nickname text-overflow" style="color:white">{{ message.fileName
-                                        }}</span>
+                                    }}</span>
                                     <span class="size">{{ getFileSize(message.fileSize) }}&nbsp;
                                         .{{ getFileSuffix(message.fileName) }}</span>
                                 </div>
-                                <el-icon v-if="!message.downloaded && !expire(message.time)" :size="24"
+                                <el-icon v-if="!message.downloaded && !expire(message)" :size="24"
                                     @click="downloadFile(message)" color="white">
                                     <Download />
                                 </el-icon>
@@ -112,16 +111,16 @@
                                 v-if="message.type == MessageType.common">
                             </div>
                             <div v-if="message.type == MessageType.video" class="msg-video">
-                                <h4>视频：</h4>
-                                <video :src="fileSrc(message.fileName)" muted="true" autoplay="false"
-                                    @play="toPlay(message)"></video>
-                                <el-icon v-if="message.downloaded" :size="24" @click="seeFileInFolder(message)">
+                                <video :src="message.downloaded ? toPlay(message) : fileSrc(message.fileName)" controls
+                                    muted="true" class="video" controlslist="nodownload"> </video>
+                                <el-icon v-if="message.downloaded" :size="24" @click="seeFileInFolder(message)" color="white">
                                     <Folder />
                                 </el-icon>
-                                <el-icon v-if="!message.downloaded && !expire(message.time)" :size="24"
+                                <el-icon v-if="!message.downloaded && !expire(message)" :size="24"
                                     @click="downloadFile(message)" color="white">
                                     <Download />
                                 </el-icon>
+                                <span class="size" v-if="expire(message)">已过期</span>
                             </div>
                         </div>
                     </div>
@@ -142,6 +141,14 @@
                                     </div>
                                 </template>
                             </el-image>
+                            <div v-if="message.type == MessageType.video" class="msg-video">
+                                <video :src="toPlay(message)" controls
+                                    muted="true" class="video" controlslist="nodownload"> </video>
+                                <el-icon v-if="message.downloaded" :size="24" @click="seeFileInFolder(message)">
+                                    <Folder />
+                                </el-icon>
+                                <span class="size" v-if="expire(message)">已过期</span>
+                            </div>
                             <div v-if="message.type == MessageType.file" class="msg-file no-drag">
                                 <el-icon color="rgb(0,75,235)" :size="24" @click="seeFileInFolder(message)">
                                     <Document />
@@ -178,13 +185,25 @@
                                     </div>
                                 </template>
                             </el-image>
+                            <div v-if="message.type == MessageType.video" class="msg-video">
+                                <video :src="message.downloaded ? toPlay(message) : fileSrc(message.fileName)" controls
+                                    muted="true" class="video" controlslist="nodownload"> </video>
+                                <el-icon v-if="message.downloaded" :size="24" @click="seeFileInFolder(message)" color="white">
+                                    <Folder />
+                                </el-icon>
+                                <el-icon v-if="!message.downloaded && !expire(message)" :size="24"
+                                    @click="downloadFile(message)" color="white">
+                                    <Download />
+                                </el-icon>
+                                <span class="size" v-if="expire(message)">已过期</span>
+                            </div>
                             <div v-if="message.type == MessageType.file" class="msg-file">
                                 <el-icon color="white" :size="24" @click="seeFileInFolder(message)">
                                     <Document />
                                 </el-icon>
                                 <div class="file-info">
                                     <span class="nickname text-overflow" style="color:white">{{ message.fileName
-                                        }}</span>
+                                    }}</span>
                                     <span class="size">{{ getFileSize(message.fileSize) }}&nbsp;
                                         .{{ getFileSuffix(message.fileName) }}</span>
                                 </div>
@@ -312,6 +331,7 @@ function messageHandle(event: MessageEvent<any>) {
     else
         toFresh.userId = state.user.id;
     freshHeadMessage(toFresh);
+    msg.contactName = msg.userName;
 }
 
 function sendMessage(headMessage: any, type: Number) {
@@ -342,7 +362,6 @@ function sendMessage(headMessage: any, type: Number) {
     }
     if (isGroupMsg(message.contactId)) {
         message.userName = state.user.nickname;
-        message.contactName = state.user.nickname;
     }
     webSocket.sendMessage(message, () => {
         CreateMessage(message, res => {
@@ -486,7 +505,10 @@ function chooseFile(mode: any) {
                 state.file.name = res.data;
                 state.file.path = path;
                 state.file.size = file.size;
-                sendMessage(currentHeadMessage.value, MessageType.file);
+                let type = MessageType.file;
+                if(mode.video)
+                  type = MessageType.video; 
+                sendMessage(currentHeadMessage.value, type);
             });
         });
     });
@@ -504,7 +526,11 @@ function downloadFile(message: any) {
         const data: any = {};
         await GetCacheFile(message.fileName, data);
         ipcRenderer.invoke("writeClientFile", filePath, data.data).then(() => {
-            UpdateFilePath(message.id, filePath, message.userId, message.contactId, () => {
+            const recordId = message.recordId;
+            const model = isGroupMsg(message.contactId) ? { recordId, filePath,contactId:message.contactId } : {
+                userId: message.userId, contactId: message.contactId, filePath: filePath, messageId: message.id
+            };
+            UpdateFilePath(model, () => {
                 message.filePath = filePath;
                 message.downloaded = true;
             });
@@ -524,7 +550,20 @@ function seeFileInFolder(message: any) {
 }
 
 function toPlay(message: any) {
-
+   if(message.videoUrl==undefined){
+    ipcRenderer.invoke("readClientFile",message.filePath)
+    .then(res=>{
+        const data = res;
+        const blob = new Blob([data]);
+        message.videoUrl = URL.createObjectURL(blob);
+    }).catch(()=>{
+        ElMessage({
+            message:"视频资源已被删除",
+            type:"warning"
+        });
+    })
+   }
+   return message.videoUrl;
 }
 
 onBeforeUnmount(() => {
@@ -844,13 +883,14 @@ onBeforeUnmount(() => {
     width: 90%;
 }
 
-.file-info .size {
+.file-info .size,.msg-video .size {
     color: gray;
     font-size: 14px;
 }
 
 .left .file-info .size,
-.group-contactor-self .file-info .size {
+.group-contactor-self .file-info .size,
+.group-contactor-self .msg-video .size {
     color: white;
 }
 
@@ -858,7 +898,29 @@ onBeforeUnmount(() => {
     color: white;
 }
 
-.msg-file .el-icon {
+.msg-file .el-icon,.msg-video .el-icon {
     cursor: pointer;
+}
+
+#message .msg-video{
+    display: flex;
+    flex-direction:row;
+    align-items: center;
+    border-radius: 6px;
+}
+
+.msg-video .video{
+    max-width: 350px;
+    max-height: 350px;
+}
+
+.left .msg-video,.group-contactor-self .msg-video{
+    background-color: rgb(0, 125, 225);
+    margin-left: 1%;
+}
+
+.right .msg-video,.group-user-self .msg-video{
+    background-color: white;
+    margin-right: 1%;
 }
 </style>

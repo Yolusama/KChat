@@ -8727,10 +8727,13 @@ const createWindow = () => {
   processCorresponse(win);
   electron.ipcMain.handle("openDialog", (event, mode) => {
     return new Promise((resolve, reject) => {
-      const filters = mode.video ? { extentions: ["mkv", "avi", "mp4", "webm", "ogg"] } : {};
+      const filters = mode.video ? [{ name: "videos", extensions: ["mkv", "avi", "mp4", "webm", "ogg"] }] : [];
+      let title = "上传文件";
+      if (mode.video)
+        title = "上传视频";
       if (mode.open)
         electron.dialog.showOpenDialog(win, {
-          title: "上传文件",
+          title,
           filters
         }).then((res) => {
           if (res.canceled) return;

@@ -87,4 +87,14 @@ body{
   justify-content: space-between;
   width: 100%;
 }
+
+
+.el-collapse-item__header button:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.el-collapse-item__header button{
+  border-radius: 0 !important;
+}
 </style>
