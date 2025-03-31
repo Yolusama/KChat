@@ -13,6 +13,7 @@ public class UserVO extends UserContactVO{
     private String nickname;
     private String signature;
     private Integer acceptMode;
-    private Boolean isFriend;
     private String area;
+    private String areaCode;
+    private Boolean isFriend;
 }

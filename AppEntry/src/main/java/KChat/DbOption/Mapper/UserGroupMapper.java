@@ -1,6 +1,7 @@
 package KChat.DbOption.Mapper;
 
 import KChat.Entity.UserGroup;
+import KChat.Entity.VO.GroupInfoVO;
 import KChat.Entity.VO.GroupVO;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
@@ -14,7 +15,7 @@ import java.util.List;
 
 @Mapper
 public interface UserGroupMapper extends BaseMapper<UserGroup> {
-    List<GroupVO> getGroups(@Param("userId")String userId);
+    List<GroupInfoVO> getGroups(@Param("userId")String userId);
     Integer hasUserJoined(@Param("userId")String userId,@Param("groupId")String groupId);
     List<String> getMemberIds(@Param("groupId")String groupId,@Param("offline")Boolean offline);
 

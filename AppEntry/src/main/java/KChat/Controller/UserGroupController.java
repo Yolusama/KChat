@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @RestController
@@ -38,7 +39,7 @@ public class UserGroupController extends ControllerBase{
         return successWithData("群创建完成！",groupService.createGroup(model));
     }
 
-    @PostMapping("/UploadAvatar/{userId}")
+    @PostMapping("/UploadAvatar/{groupId}")
     @ClearRedisCache(keys = {CachingKeys.GetUserGroups})
     public ActionResult<String> UploadAvatar(@PathVariable String groupId,
                                      @RequestPart("file")MultipartFile file,@RequestPart("avatar")String avatar){
@@ -46,7 +47,7 @@ public class UserGroupController extends ControllerBase{
     }
 
     @GetMapping("/GetGroups/{userId}")
-    public CompletableFuture<ActionResult<List<GroupVO>>> GetUserGroups(@PathVariable String userId){
+    public CompletableFuture<ActionResult<Map<String,List<GroupInfoVO>>>> GetUserGroups(@PathVariable String userId){
         return CompletableFuture.completedFuture(
                 successWithData(groupService.getUserGroups(userId,redis))
         );
@@ -60,6 +61,13 @@ public class UserGroupController extends ControllerBase{
             return CompletableFuture.completedFuture(fail(HttpStatus.NOT_FOUND));
 
         return CompletableFuture.completedFuture(successWithData(res));
+    }
+
+    @PatchMapping("/ChangeDescription/{groupId}")
+    @ClearRedisCache(keys = {CachingKeys.GetUserGroups})
+    public ActionResult ChangeDescription(@PathVariable String groupId,@RequestParam String description){
+        groupService.changeDescription(groupId,description);
+        return ok("已更新描述信息！");
     }
 
 }

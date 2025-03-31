@@ -13,6 +13,7 @@ public class GroupInfoVO {
     private Integer currentCount;
     private Integer size;
     private String description;
+    private String remark;
     private Boolean userJoined;
 
     public Boolean canJoin(){

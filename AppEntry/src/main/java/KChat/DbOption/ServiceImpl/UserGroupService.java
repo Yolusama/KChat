@@ -27,7 +27,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class UserGroupService implements IUserGroupService {
@@ -57,17 +60,25 @@ public class UserGroupService implements IUserGroupService {
     }
 
     @Override
-    public List<GroupVO> getUserGroups(String userId, RedisCache redis) {
-        ArrayDataModel<GroupVO> model;
+    public Map<String, List<GroupInfoVO>> getUserGroups(String userId, RedisCache redis) {
         String key = String.format("%s_%s",userId, CachingKeys.GetUserGroups);
         if(redis.has(key))
-            model = (ArrayDataModel<GroupVO>) redis.get(key);
-        else{
-            model = new ArrayDataModel<>();
-            model.setData(groupMapper.getGroups(userId));
-            redis.set(key,model,Constants.NormalCachingExpire);
+            return (Map<String, List<GroupInfoVO>>) redis.get(key);
+        List<GroupInfoVO> groups = groupMapper.getGroups(userId);
+        final String key1 = "我的群";
+        final String key2 = "加入的群";
+        Map<String,List<GroupInfoVO>> res = new HashMap<>();
+        res.put(key1,new ArrayList<>());
+        res.put(key2,new ArrayList<>());
+        for(GroupInfoVO group:groups){
+            group.setUserJoined(true);
+            if(group.getOwnerId().equals(userId))
+                res.get(key1).add(group);
+            else
+                res.get(key2).add(group);
         }
-        return model.getData();
+        redis.set(key,res,Constants.NormalCachingExpire);
+        return res;
     }
 
     @Override
@@ -121,5 +132,13 @@ public class UserGroupService implements IUserGroupService {
         var res = ObjectUtil.copy(group,new GroupInfoVO());
         res.setUserJoined(groupMapper.hasUserJoined(userId,res.getId()).equals(Constants.NormalState));
         return res;
+    }
+
+    @Override
+    @Transactional
+    public void changeDescription(String groupId, String description) {
+        LambdaUpdateWrapper<UserGroup> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.set(UserGroup::getDescription,description).eq(UserGroup::getId,groupId);
+        groupMapper.update(wrapper);
     }
 }

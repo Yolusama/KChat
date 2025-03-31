@@ -156,10 +156,17 @@ public class ChatMessageService implements IChatMessageService {
     public Long createMessage(ChatMessageModel model, MQMsgProducer msgProducer) {
         ChatMessage message = new ChatMessage();
         createMessage(model,message);
-        MessageRecord record = new MessageRecord();
-        record.setContactId(model.getContactId());
-        msgProducer.produceAndSend(record);
-        if(model.getContactId().indexOf(Constants.GroupIdPrefix)<Constants.None) {
+        boolean isGroup = model.getContactId().indexOf(Constants.GroupIdPrefix)>=Constants.None;
+        if(isGroup) {
+            List<String> onlineMemberIds = groupMapper.getMemberIds(model.getContactId(),false);
+            for(String id:onlineMemberIds)
+            {
+                MessageRecord record = new MessageRecord();
+                record.setContactId(id);
+                msgProducer.produceAndSend(record);
+            }
+        }
+        else {
             Boolean online = userMapper.isOnline(model.getContactId());
             if (!online) {
                 LambdaUpdateWrapper<HeadMessage> wrapper = new LambdaUpdateWrapper<>();
@@ -167,6 +174,9 @@ public class ChatMessageService implements IChatMessageService {
                         .set(HeadMessage::getContent, model.getContent()).set(HeadMessage::getTime, model.getTime());
                 headMapper.update(wrapper);
             }
+            MessageRecord record = new MessageRecord();
+            record.setContactId(model.getContactId());
+            msgProducer.produceAndSend(record);
         }
         return message.getId();
     }
@@ -260,12 +270,11 @@ public class ChatMessageService implements IChatMessageService {
     @Transactional
     public void updateFilePath(MessageRecordModel model, MQMsgProducer msgProducer) {
         int res;
-        if(model.getContactId().indexOf('G')>=Constants.None)
+        if(model.getContactId().indexOf(Constants.GroupIdPrefix)<Constants.None)
         res = recordMapper.updateFilePath(model.getMessageId(),model.getUserId()
                 ,model.getContactId(),model.getFilePath());
         else
-            res = groupMessageRecordMapper.updateFilePath(model.getMessageId(),model.getUserId(),
-                    model.getContactId(),model.getFilePath());
+            res = groupMessageRecordMapper.updateFilePath(model.getRecordId(),model.getFilePath());
         if(res!=Constants.None)
         {
             MessageRecord record = new MessageRecord();

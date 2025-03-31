@@ -103,7 +103,7 @@ public class UserController extends ControllerBase{
     }
 
     @GetMapping("/GetFriends/{userId}")
-    public CompletableFuture<ActionResult<Map<Long,List<UserInfoVO>>>> GetFriends(@PathVariable String userId){
+    public CompletableFuture<ActionResult<Map<String,List<UserInfoVO>>>> GetFriends(@PathVariable String userId){
         return CompletableFuture.completedFuture(
                 successWithData(userContactService.getFriends(userId,redis))
         );

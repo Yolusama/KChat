@@ -13,16 +13,12 @@ import KChat.Entity.VO.UserInfoVO;
 import KChat.Model.ArrayDataModel;
 import KChat.Model.UserContactModel;
 import KChat.Service.RedisCache;
-import KChat.Utils.ObjectUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 @Service
@@ -38,20 +34,23 @@ public class UserContactService implements IUserContactService {
     }
 
     @Override
-    public Map<Long, List<UserInfoVO>> getFriends(String userId, RedisCache redis) {
+    public Map<String, List<UserInfoVO>> getFriends(String userId, RedisCache redis) {
         String key = String.format("%s_%s",userId, CachingKeys.GetUserFriends);
         if(redis.has(key))
-            return (Map<Long, List<UserInfoVO>>) redis.get(key);
+            return (Map<String, List<UserInfoVO>>) redis.get(key);
         var data = contactMapper.getFriends(userId);
-        Map<Long,List<UserInfoVO>> res = new HashMap<>();
+        var userLabels = getUserLabels(userId,redis);
+        var res = new HashMap<String,List<UserInfoVO>>();
+        for(var label:userLabels){
+            String labelKey = label.toString();
+            res.put(labelKey,new ArrayList<>());
+        }
         for(var user:data){
-            if(res.containsKey(user.getLabelId()))
-                 res.get(user.getLabelId()).add(user);
-            else{
-                List<UserInfoVO> list = new ArrayList<>();
-                list.add(user);
-                res.put(user.getLabelId(),list);
-            }
+            user.setIsFriend(true);
+            ContactLabelVO label = new ContactLabelVO();
+            label.setId(user.getLabelId());
+            label.setName(user.getLabelName());
+            res.get(label.toString()).add(user);
         }
         redis.set(key,res, Constants.NormalCachingExpire);
         return res;
@@ -78,11 +77,7 @@ public class UserContactService implements IUserContactService {
             model = (ArrayDataModel<ContactLabelVO>) redis.get(key);
             return model.getData();
         }
-        List<ContactLabel> data = labelMapper.selectList(new LambdaQueryWrapper<ContactLabel>().
-                eq(ContactLabel::getUserId,userId));
-        List<ContactLabelVO> res = new ArrayList<>();
-        for(var label:data)
-            res.add(ObjectUtil.copy(label,new ContactLabelVO()));
+        List<ContactLabelVO> res = labelMapper.getContactLabels(userId);
         model = new ArrayDataModel<>();
         model.setData(res);
         redis.set(key,model,Constants.NormalCachingExpire);
@@ -101,5 +96,14 @@ public class UserContactService implements IUserContactService {
         res.setName(labelName);
         res.setId(label.getId());
         return res;
+    }
+
+    @Override
+    @Transactional
+    public void changeRemark(String userId, String contactId, String remark) {
+        LambdaUpdateWrapper<UserContact> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(UserContact::getContactId,contactId).eq(UserContact::getUserId,userId)
+                .set(UserContact::getRemark,remark);
+        contactMapper.update(wrapper);
     }
 }

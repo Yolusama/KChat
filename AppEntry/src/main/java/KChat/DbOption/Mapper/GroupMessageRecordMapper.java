@@ -12,9 +12,7 @@ import java.util.List;
 public interface GroupMessageRecordMapper extends BaseMapper<GroupMessageRecord> {
     void batchInsert(@Param("records") List<GroupMessageRecord> records);
 
-    @Update("update GroupMessageRecord set filePath=#{filePath},downloaded=1 where messageId = #{messageId}" +
-            " and memberId = #{userId} and groupId =#{groupId} and selfRecord = 0")
-    int updateFilePath(@Param("messageId")Long messageId,@Param("userId")String userId,
-                       @Param("groupId")String groupId,
+    @Update("update GroupMessageRecord set filePath=#{filePath},downloaded=1 where id = #{recordId}")
+    int updateFilePath(@Param("recordId")Long recordId,
                        @Param("filePath")String filePath);
 }

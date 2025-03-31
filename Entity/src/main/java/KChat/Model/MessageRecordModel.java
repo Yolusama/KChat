@@ -10,4 +10,5 @@ public class MessageRecordModel {
     private String userId;
     private String contactId;
     private String filePath;
+    private Long recordId;
 }

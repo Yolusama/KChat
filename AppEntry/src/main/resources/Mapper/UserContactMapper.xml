@@ -4,9 +4,10 @@
 
 <mapper namespace="KChat.DbOption.Mapper.UserContactMapper">
     <select id="getFriends" resultType="KChat.Entity.VO.UserInfoVO">
-        select u.nickname,u.remark,u.signature,u.account,l.id as labelId,l.name as labelName from User u
-           join UserContact on u.id = uc.contactId
-            join ContactLabel l on l.id = uc.contactId
+        select u.id,u.nickname,uc.remark,u.signature,u.account,u.avatar,l.id as labelId,l.name as labelName,
+               u.email,u.gender from User u
+           join UserContact uc on u.id = uc.contactId
+            join ContactLabel l on l.id = uc.labelId
         where uc.userId = #{userId} and uc.status not in(3,5)
     </select>
 </mapper>
