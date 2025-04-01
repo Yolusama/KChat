@@ -56,3 +56,11 @@ export async function GetCacheFile(fileName:string,result:any) {
 export function UpdateFilePath(model:any,successCallback:(res:Result)=>void){
     api.patch(chatApiUrl("/UpdateFilePath"),authorization(),model,successCallback);
 }
+
+export function ToSendMessage(userId:string,contactId:string,successCallback:(res:Result)=>void){
+    api.put(chatApiUrl(`/ToSendMessage/${userId}/${contactId}`),authorization(),{},successCallback);
+}
+
+export function RemoveMessages(userId:string,contactId:string,successCallback:(res:Result)=>void){
+    api.delete(chatApiUrl(`/RemoveMessages/${userId}/${contactId}`),authorization(),successCallback);
+}

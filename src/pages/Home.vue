@@ -1,10 +1,12 @@
 <template>
   <app-header :inLoginCom="false"></app-header>
   <div id="home">
-    <el-menu default-active="/Home/Message" mode="vertical" :router="true" active-text-color="#409eff"
+    <el-menu :default-active="route.path" mode="vertical" :router="true" active-text-color="#409eff"
       background-color="#f8f8f8" class="home-menu">
       <el-menu-item v-if="user != null">
-        <img class="avatar no-drag" :src="imgSrc(user.avatar)" />
+        <contact-profile :contactId="user.id">
+          <img class="avatar no-drag" :src="imgSrc(user.avatar)" />
+        </contact-profile>
       </el-menu-item>
       <el-menu-item index="/Home/Message" @click="unreadOpt.message = false">
         <el-badge is-dot :hidden="!unreadOpt.message" :offset="[10, 20]">
@@ -38,7 +40,9 @@ import { imgSrc } from '../modules/Request';
 import sse from '../modules/SSE';
 import { Route } from '../modules/Route';
 import webSocket from '../modules/WebSocket';
+import { useRoute } from 'vue-router';
 
+const route = useRoute();
 const user = ref<any>(null);
 const unreadOpt = ref<any>({
   apply: false,
@@ -54,7 +58,7 @@ onMounted(() => {
   ipcRenderer.send("userLogan", user.value.id, user.value.token);
   sse.assign(user.value.id);
   sse.assignMessageCallback(messageCallback);
-  webSocket.assign(user.value.id,user.value.token);
+  webSocket.assign(user.value.id, user.value.token);
   Route.dive("#/Home/Message");
 
   /*ipcRenderer.invoke("testRead","src/modules/WebSocket.ts").then(data=>{

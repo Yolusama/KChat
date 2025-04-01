@@ -52,7 +52,7 @@ import { onMounted, reactive, ref } from 'vue';
 import { GetCheckCode, Login, Register, VerifyToken } from '../api/User';
 import stateStroge from '../modules/StateStorage';
 import { Route } from '../modules/Route';
-import { defalutLodingColor1, LoadingOperate, oneSecond } from '../modules/Common';
+import { CurrentHeadMessage, defalutLodingColor1, LoadingOperate, oneSecond } from '../modules/Common';
 import { ElMessage, type FormRules } from 'element-plus';
 import { Message, Lock } from "@element-plus/icons-vue";
 
@@ -101,6 +101,8 @@ onMounted(function () {
     if (stateStroge.has("user")) {
         const user = stateStroge.get("user");
         VerifyToken(user.id, user.token, res => {
+            if(stateStroge.has(CurrentHeadMessage))
+               stateStroge.remove(CurrentHeadMessage);
             if (!res.data) {
                 ElMessage({
                     message: res.message,

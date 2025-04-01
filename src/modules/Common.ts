@@ -187,3 +187,22 @@ export function getFileSize(fileSize:number){
     else
        return `${(fileSize/GB).toFixed(1)}GB`;
 }
+
+export const ADayMills = 1000*60*60*24;
+export const CurrentHeadMessage = "current-head-message";
+
+export class StylePos{
+    x:number;
+    y:number;
+    show:boolean;
+    headMessage:any= {};
+
+    constructor(){
+        this.x = this.y = 0;
+        this.show = false;
+    }
+
+    style(){
+        return `left:${this.x}px;top:${this.y}px;transform:translate(50%,50%)`;
+    }
+}

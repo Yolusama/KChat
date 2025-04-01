@@ -3,15 +3,16 @@
         <el-scrollbar class="head-messages">
             <search-com @search="" @groupCreated="createdGroup"></search-com>
             <div class="head-message" v-for="(message, index) in state.headMessages" :key="index"
-                @click="getMessages(message)" :style="currentHeadMessage != null && currentHeadMessage.id == message.id ?
-                    'background-color:rgb(0,155,245);' : ''">
+                @click.left="getMessages(message)" :style="currentHeadMessage != null && currentHeadMessage.id == message.id ?
+                    'background-color:rgb(0,155,245);' : ''"
+                    @click.right="openHeadMsgMenu($event,headMessage)">
                 <img :src="imgSrc(message.contactAvatar)" class="avatar">
                 <div class="info">
                     <div class="between">
                         <span class="text-overflow nickname" :style="currentHeadMessage != null && currentHeadMessage.id == message.id ?
                             'color:white' : ''">{{ message.contactName }}</span>
                         <span class="time" :style="currentHeadMessage != null && currentHeadMessage.id == message.id ?
-                            'color:white' : ''">{{ timeWithoutSeconds(new Date(message.time)) }}</span>
+                            'color:white' : ''">{{ timeStr(new Date(message.time)) }}</span>
                     </div>
                     <div class="between">
                         <span class="text-overflow head-content" :style="currentHeadMessage != null && currentHeadMessage.id == message.id ?
@@ -25,12 +26,14 @@
         <div class="empty" v-if="currentHeadMessage == null">
             <img class="background" src="../assets/messages-empty.jpg" />
         </div>
-        <div class="messages" v-else>
-            <div class="head">
-                {{ currentHeadMessage.contactName }}
+        <div class="messages" v-else ref="messagesContent">
+            <div class="head no-drag">
+                <contact-profile :contactId="currentHeadMessage.contactId" palcement="right-end">
+                    {{ currentHeadMessage.contactName }}
+                </contact-profile>
             </div>
-            <el-scrollbar style="height:60%;padding-right: 2%;" class="no-drag">
-                <div class="message" v-for="message in msgPageOpt.data" :key="message.id" ref="messagesContent">
+            <el-scrollbar style="height:60%;padding-right: 2%;" class="no-drag" ref="scroll">
+                <div class="message" v-for="message in msgPageOpt.data" :key="message.id">
                     <span class="time">{{ new Date(message.time).toLocaleString() }}</span>
                     <div class="content user" v-if="message.userId == state.user.id && !isGroupMsg(message.contactId)">
                         <div class="user-info right">
@@ -64,18 +67,22 @@
                             </div>
                             <div v-if="message.type == MessageType.video" class="msg-video">
                                 <video :src="toPlay(message)" muted="true" class="video" controls
-                                   controlslist="nodownload" ></video>
+                                    controlslist="nodownload" @loadeddata="scrollBottom"></video>
                                 <el-icon v-if="message.downloaded" :size="24" @click="seeFileInFolder(message)">
                                     <Folder />
                                 </el-icon>
                             </div>
-                            <img :src="imgSrc(state.user.avatar)" class="avatar">
+                            <contact-profile :contactId="state.user.id" placement="left-start">
+                                <img :src="imgSrc(state.user.avatar)" class="avatar">
+                            </contact-profile>
                         </div>
                     </div>
                     <div class="content contactor"
                         v-if="message.userId != state.user.id && !isGroupMsg(message.contactId)">
                         <div class="user-info left">
-                            <img :src="imgSrc(message.contactAvatar)" class="avatar">
+                            <contact-profile :contactId="message.userId" placement="right-start">
+                                <img :src="imgSrc(message.contactAvatar)" class="avatar">
+                            </contact-profile>
                             <el-image class="msg-img" :src="imageMsgDisplay(message)"
                                 :preview-src-list="[imageMsgDisplay(message)]" v-if="message.type == MessageType.image"
                                 fit="fill">
@@ -112,8 +119,10 @@
                             </div>
                             <div v-if="message.type == MessageType.video" class="msg-video">
                                 <video :src="message.downloaded ? toPlay(message) : fileSrc(message.fileName)" controls
-                                    muted="true" class="video" controlslist="nodownload"> </video>
-                                <el-icon v-if="message.downloaded" :size="24" @click="seeFileInFolder(message)" color="white">
+                                    muted="true" class="video" controlslist="nodownload" @loadeddata="scrollBottom">
+                                </video>
+                                <el-icon v-if="message.downloaded" :size="24" @click="seeFileInFolder(message)"
+                                    color="white">
                                     <Folder />
                                 </el-icon>
                                 <el-icon v-if="!message.downloaded && !expire(message)" :size="24"
@@ -142,8 +151,8 @@
                                 </template>
                             </el-image>
                             <div v-if="message.type == MessageType.video" class="msg-video">
-                                <video :src="toPlay(message)" controls
-                                    muted="true" class="video" controlslist="nodownload"> </video>
+                                <video :src="toPlay(message)" controls muted="true" class="video"
+                                    controlslist="nodownload" @loadeddata="scrollBottom"> </video>
                                 <el-icon v-if="message.downloaded" :size="24" @click="seeFileInFolder(message)">
                                     <Folder />
                                 </el-icon>
@@ -164,11 +173,15 @@
                                 <span v-if="expire(message.time)">已过期</span>
                             </div>
                         </div>
-                        <img :src="imgSrc(state.user.avatar)" class="avatar">
+                        <contact-profile :contactId="message.userId" placement="left-start">
+                            <img :src="imgSrc(state.user.avatar)" class="avatar">
+                        </contact-profile>
                     </div>
                     <div class="content group-contactor"
                         v-if="message.userId != state.user.id && isGroupMsg(message.contactId)">
-                        <img :src="imgSrc(state.user.avatar)" class="avatar">
+                        <contact-profile :contactId="message.userId" placement="right-start">
+                            <img :src="imgSrc(state.user.avatar)" class="avatar">
+                        </contact-profile>
                         <div class="group-contactor-self">
                             <span class="nickname text-overflow">{{ message.contactName }}</span>
                             <div class="message-body" v-html="message.content"
@@ -187,8 +200,10 @@
                             </el-image>
                             <div v-if="message.type == MessageType.video" class="msg-video">
                                 <video :src="message.downloaded ? toPlay(message) : fileSrc(message.fileName)" controls
-                                    muted="true" class="video" controlslist="nodownload"> </video>
-                                <el-icon v-if="message.downloaded" :size="24" @click="seeFileInFolder(message)" color="white">
+                                    muted="true" class="video" controlslist="nodownload" @loadeddata="scrollBottom">
+                                </video>
+                                <el-icon v-if="message.downloaded" :size="24" @click="seeFileInFolder(message)"
+                                    color="white">
                                     <Folder />
                                 </el-icon>
                                 <el-icon v-if="!message.downloaded && !expire(message)" :size="24"
@@ -249,20 +264,28 @@
                     <input type="file" style="display:none" id="pic" @change="chooseImage" accept="image/*">
                 </div>
                 <textarea v-model="state.content" class="input" style="" @keydown="keyToSend">
-    </textarea>
+                </textarea>
                 <el-tooltip effect="dark" content="按住ctrl+空格快捷发送" placement="top">
                     <el-button type="primary" class="send" @click="send">发送</el-button>
                 </el-tooltip>
             </div>
         </div>
+        <div class="head-menu no-drag" v-show="headMenu.show" :style="headMenu.style()"
+         @mouseleave.stop="headMenu.show=false;">
+           <div @click.stop="copyAccount" class="func">复制账号</div>
+            <div @click.stop="removeMessages" class="func">移除消息</div>
+            <div @click.stop ="" class="func">拉黑TA</div>
+            <div @click.stop="" class="func">删除好友</div>
+        </div>
+        <div class="msg-menu no-drag" v-show="msgMenu.show" :style="msgMenu.style()" @blur="msgMenu.show=false"></div>
     </div>
 </template>
 
 <script lang="ts" setup>
 import { reactive, onMounted, ref, onBeforeUnmount } from 'vue';
 import webSocket from '../modules/WebSocket';
-import { copy, getFileSize, getFileSuffix, MessageType, PageOption, playNotifyAudio, timeWithoutSeconds } from '../modules/Common';
-import { CreateMessage, FreshHeadMessage, GetCacheFile, GetHeadMessages, GetMessages, UpdateFilePath, UploadFile } from '../api/ChatMessage';
+import { copy, CurrentHeadMessage, delayToRun, getFileSize, getFileSuffix, MessageType, onlyDate, PageOption, playNotifyAudio, StylePos, timeWithoutSeconds } from '../modules/Common';
+import { CreateMessage, FreshHeadMessage, GetCacheFile, GetHeadMessages, GetMessages, RemoveMessages, UpdateFilePath, UploadFile } from '../api/ChatMessage';
 import stateStroge from '../modules/StateStorage';
 import { fileSrc, imgSrc } from '../modules/Request';
 import { ipcRenderer } from 'electron';
@@ -282,6 +305,12 @@ const state = reactive<any>({
 
 const currentHeadMessage = ref<any>(null);
 const messagesContent = ref<any>(null);
+const scroll = ref<any>(null);
+const today = ref(new Date());
+const headMenu = ref<StylePos>(new StylePos());
+const msgMenu = ref<StylePos>(new StylePos());
+
+const maxScrollHeight = 2000;
 
 onMounted(() => {
     webSocket.assignMessageCallback(messageHandle);
@@ -321,6 +350,7 @@ function messageHandle(event: MessageEvent<any>) {
                 await ipcRenderer.invoke("writeFile", state.user.account, msg.fileName, res.data);
             });
         }
+        scrollBottom();
     }
     const toFresh: any = {};
     copy(msg, toFresh);
@@ -376,6 +406,7 @@ function sendMessage(headMessage: any, type: Number) {
                     msgPageOpt.value.data.push(message);
 
                 freshHeadMessage(message);
+                scrollBottom();
             }
             state.content = "";
             if (type != MessageType.common) {
@@ -392,19 +423,29 @@ function sendMessage(headMessage: any, type: Number) {
 function getData() {
     GetHeadMessages(state.user.id, res => {
         state.headMessages = res.data;
+
+        if (stateStroge.has(CurrentHeadMessage)) {
+            const { contactId } = stateStroge.get(CurrentHeadMessage);
+            const headMessage = state.headMessages.find((h: any) => h.contactId == contactId);
+            getMessages(headMessage);
+        }
     });
 }
 
 function getMessages(headMessage: any) {
     msgPageOpt.value.current = 1;
     msgPageOpt.value.total = 0;
+    currentHeadMessage.value = null;
 
     GetMessages(msgPageOpt.value.current, msgPageOpt.value.size, state.user.id, headMessage.contactId, res => {
         msgPageOpt.value.data = res.data.data;
         msgPageOpt.value.total = res.data.total;
+        delayToRun(() => {
+            currentHeadMessage.value = headMessage;
+            stateStroge.set(CurrentHeadMessage, { contactId: headMessage.contactId });
+        }, 5);
+        scrollBottom();
     });
-
-    currentHeadMessage.value = headMessage;
 }
 
 function freshHeadMessage(msg: any) {
@@ -506,8 +547,8 @@ function chooseFile(mode: any) {
                 state.file.path = path;
                 state.file.size = file.size;
                 let type = MessageType.file;
-                if(mode.video)
-                  type = MessageType.video; 
+                if (mode.video)
+                    type = MessageType.video;
                 sendMessage(currentHeadMessage.value, type);
             });
         });
@@ -527,7 +568,7 @@ function downloadFile(message: any) {
         await GetCacheFile(message.fileName, data);
         ipcRenderer.invoke("writeClientFile", filePath, data.data).then(() => {
             const recordId = message.recordId;
-            const model = isGroupMsg(message.contactId) ? { recordId, filePath,contactId:message.contactId } : {
+            const model = isGroupMsg(message.contactId) ? { recordId, filePath, contactId: message.contactId } : {
                 userId: message.userId, contactId: message.contactId, filePath: filePath, messageId: message.id
             };
             UpdateFilePath(model, () => {
@@ -550,20 +591,60 @@ function seeFileInFolder(message: any) {
 }
 
 function toPlay(message: any) {
-   if(message.videoUrl==undefined){
-    ipcRenderer.invoke("readClientFile",message.filePath)
-    .then(res=>{
-        const data = res;
-        const blob = new Blob([data]);
-        message.videoUrl = URL.createObjectURL(blob);
-    }).catch(()=>{
-        ElMessage({
-            message:"视频资源已被删除",
-            type:"warning"
-        });
-    })
-   }
-   return message.videoUrl;
+    if (message.videoUrl == undefined) {
+        ipcRenderer.invoke("readClientFile", message.filePath)
+            .then(res => {
+                const data = res;
+                const blob = new Blob([data]);
+                message.videoUrl = URL.createObjectURL(blob);
+            }).catch(() => {
+                ElMessage({
+                    message: "视频资源已被删除",
+                    type: "warning"
+                });
+            })
+    }
+    return message.videoUrl;
+}
+
+function timeStr(time: Date) {
+    if (onlyDate(time).getTime() == onlyDate(today.value).getTime())
+        return timeWithoutSeconds(time);
+    if (onlyDate(time).getTime() == new Date(onlyDate(today.value)).setDate(today.value.getDate() - 1))
+        return "昨天";
+    return time.toLocaleDateString();
+}
+
+function scrollBottom() {
+    delayToRun(() => {
+        scroll.value.setScrollTop(maxScrollHeight);
+    }, 50);
+}
+
+function openHeadMsgMenu(e:any,headMessage:any){
+   headMenu.value.show = true; 
+   headMenu.value.x = e.offsetX;
+   headMenu.value.y = e.offsetY;
+   headMenu.value.headMessage = headMessage;
+}
+
+function copyAccount(){
+    navigator.clipboard.write(headMenu.value.headMessage.contactAccount);
+}
+
+function removeMessages(){
+    const contactId = headMenu.value.headMessage.contactId;
+    RemoveMessages(state.user.id,contactId,()=>{
+        const index = state.headMessages.findIndex((h:any)=>h.contactId==contactId);
+        if(index<0){
+            ElMessage({
+                message:"发生了一个错误！",
+                type:"error"
+            });
+        }
+        else
+           state.headMessages.splice(index,1);
+    });
 }
 
 onBeforeUnmount(() => {
@@ -599,8 +680,14 @@ onBeforeUnmount(() => {
     padding-left: 1%;
 }
 
+.messages .head:hover {
+    background-color: rgba(98%, 98%, 98%, .35);
+    cursor: pointer;
+}
+
 #message .head-message {
     display: flex;
+    cursor: default;
     width: 100%;
     padding: 2px 3px;
     height: 50px;
@@ -612,7 +699,7 @@ onBeforeUnmount(() => {
 .head-message .nickname {
     color: black;
     font-size: 13px;
-    width: 70%;
+    width: 60%;
     text-align: left;
 }
 
@@ -762,7 +849,7 @@ onBeforeUnmount(() => {
 #message .head-message .time {
     font-size: 12px;
     color: gray;
-    width: 20%;
+    width: 40%;
     margin-right: 5%;
 }
 
@@ -883,7 +970,8 @@ onBeforeUnmount(() => {
     width: 90%;
 }
 
-.file-info .size,.msg-video .size {
+.file-info .size,
+.msg-video .size {
     color: gray;
     font-size: 14px;
 }
@@ -898,29 +986,59 @@ onBeforeUnmount(() => {
     color: white;
 }
 
-.msg-file .el-icon,.msg-video .el-icon {
+.msg-file .el-icon,
+.msg-video .el-icon {
     cursor: pointer;
 }
 
-#message .msg-video{
+#message .msg-video {
     display: flex;
-    flex-direction:row;
+    flex-direction: row;
     align-items: center;
     border-radius: 6px;
 }
 
-.msg-video .video{
+.msg-video .video {
     max-width: 350px;
     max-height: 350px;
 }
 
-.left .msg-video,.group-contactor-self .msg-video{
+.left .msg-video,
+.group-contactor-self .msg-video {
     background-color: rgb(0, 125, 225);
     margin-left: 1%;
 }
 
-.right .msg-video,.group-user-self .msg-video{
+.right .msg-video,
+.group-user-self .msg-video {
     background-color: white;
     margin-right: 1%;
 }
+
+.head-menu,.msg-menu{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: absolute;
+  width: 120px;
+  z-index:12;
+  background-color: rgb(96%,97%,98%);
+  font-size: 13px;
+  border-radius: 6px;
+}
+
+.head-menu .func,.msg-menu .func{
+    display: flex;
+    height: 25px;
+    align-items: center;
+    cursor: pointer;
+    color: black;
+    width: 100%;
+    justify-content: center;
+}
+
+.head-menu .func:hover,.msg-menu .func:hover{
+    background-color: rgb(12,13,15,.35);
+}
+
 </style>

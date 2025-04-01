@@ -56,3 +56,7 @@ export function IsUserOnline(userId:string,successCallback:(res:Result)=>void){
 export function GoOffline(userId:string,successCallback:(res:Result)=>void){
     api.patch(userApiUrl(`/GoOffline/${userId}`),authorization(),{},successCallback);
 }
+
+export function GetUserInfo(userId:string,contactId:string,successCallback:(res:Result)=>void){
+    api.get(userApiUrl(`/GetUserInfo/${userId}?identifier=${contactId}`),authorization(),successCallback);
+}

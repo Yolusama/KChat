@@ -8,6 +8,7 @@ import * as ElementPlusIconsVue from "@element-plus/icons-vue";
 import AppHeader from './components/AppHeader.vue';
 import SearchComponent from './components/SearchComponent.vue';
 import UserApplyDialog from './components/UserApplyDialog.vue'
+import ContactProfile from './components/ContactProfile.vue'
 
 const app= createApp(App); 
 
@@ -18,6 +19,7 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 app.component("app-header",AppHeader);
 app.component("search-com",SearchComponent);
 app.component("apply-dialog",UserApplyDialog);
+app.component("contact-profile",ContactProfile);
 
 app.use(router);
 app.use(ElementPlus);

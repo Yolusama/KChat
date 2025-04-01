@@ -214,7 +214,7 @@
                   </el-icon>
                   <span style="font-size:13px">退出群聊</span>
                </div>
-               <div class="func">
+               <div class="func" @click="toSendMessage">
                   <el-icon :size="20">
                      <ChatDotSquare />
                   </el-icon>
@@ -246,14 +246,15 @@ import { onMounted, reactive, ref } from 'vue';
 import { GetGroupApplies, GetUserApplies, RemoveContactorCache, SetApplyStatus } from '../api/UserApply';
 import stateStroge from '../modules/StateStorage';
 import { imgSrc } from '../modules/Request';
-import { copy, delayToRun, GroupContactStatus, UserApplyStatus, type HeadMessage } from '../modules/Common';
+import { copy, CurrentHeadMessage, delayToRun, GroupContactStatus, UserApplyStatus, type HeadMessage } from '../modules/Common';
 import webSocket from '../modules/WebSocket';
 import { CreateLabel, GetFriends, GetUserLabels, IsUserOnline } from '../api/User';
-import { CreateHeadMessage, CreateMessage, CreateOfflineMessage, FreshHeadMessage } from '../api/ChatMessage';
+import { CreateHeadMessage, CreateMessage, CreateOfflineMessage, FreshHeadMessage, ToSendMessage } from '../api/ChatMessage';
 import { ElMessageBox } from 'element-plus';
 import { ChangeDescription, GetUserGroups } from '../api/UserGroup';
 import { nextTick } from 'process';
 import { ChangeRemark } from '../api/Common';
+import { Route } from '../modules/Route';
 
 const state = reactive<any>({
    showUserApply: false,
@@ -549,6 +550,13 @@ function changeDescription(){
        state.contactDescription = "";
        state.descriptionEdit = false;
     });
+}
+
+function toSendMessage(){
+   ToSendMessage(state.userId,state.data.id,()=>{
+      stateStroge.set(CurrentHeadMessage,{contactId:state.data.id});
+      Route.switch("#/Home/Message");
+   });
 }
 </script>
 
