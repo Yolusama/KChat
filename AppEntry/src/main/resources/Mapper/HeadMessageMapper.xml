@@ -10,11 +10,13 @@
     </insert>
 
     <select id="getHeadMessages" resultType="KChat.Entity.VO.HeadMessageVO">
-      select hm.id,hm.content,hm.contactId,u.nickname as contactName,u.avatar as contactAvatar,hm.time,u.role as userName
+      select hm.id,hm.content,hm.contactId,u.nickname as contactName,u.avatar as contactAvatar,hm.time,u.role as userName,
+             u.account as contactAccount
         from User u join HeadMessage hm on u.id = hm.contactId
                  where hm.userId = #{userId}
      union
       select hm.id,hm.content,hm.contactId,g.name as contactName,g.avatar as contactAvatar,hm.time,
+             g.description as contactAccount,
             (
                 select u.nickname from User u
                      join GroupMessageRecord mr on u.id = mr.memberId

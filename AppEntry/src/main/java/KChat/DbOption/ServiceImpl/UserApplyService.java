@@ -4,11 +4,13 @@ import KChat.Common.CachingKeys;
 import KChat.Common.Constants;
 import KChat.DbOption.Mapper.UserApplyMapper;
 import KChat.DbOption.Mapper.UserContactMapper;
+import KChat.DbOption.Mapper.UserGroupMapper;
 import KChat.DbOption.Service.IUserApplyService;
 import KChat.Entity.Enum.UserApplyStatus;
 import KChat.Entity.Enum.UserContactStatus;
 import KChat.Entity.UserApply;
 import KChat.Entity.UserContact;
+import KChat.Entity.UserGroup;
 import KChat.Entity.VO.GroupApplyVO;
 import KChat.Entity.VO.UserApplyVO;
 import KChat.Model.ArrayDataModel;
@@ -28,11 +30,13 @@ import java.util.List;
 public class UserApplyService implements IUserApplyService {
     private final UserApplyMapper applyMapper;
     private final UserContactMapper userContactMapper;
+    private final UserGroupMapper groupMapper;
 
     @Autowired
-    public UserApplyService(UserApplyMapper applyMapper,UserContactMapper userContactMapper){
+    public UserApplyService(UserApplyMapper applyMapper,UserContactMapper userContactMapper,UserGroupMapper groupMapper){
         this.applyMapper = applyMapper;
         this.userContactMapper = userContactMapper;
+        this.groupMapper = groupMapper;
     }
 
     @Override
@@ -126,6 +130,7 @@ public class UserApplyService implements IUserApplyService {
                 NettyServer.GroupChannels.get(model.getContactId()).add(
                         NettyServer.UserChannels.get(model.getUserId())
                 );
+                groupMapper.userJoined(model.getContactId());
             }
             wrapper.set(UserApply::getStatus,UserApplyStatus.ACCEPTED.value());
             msgProducer.produceAndSend(apply);

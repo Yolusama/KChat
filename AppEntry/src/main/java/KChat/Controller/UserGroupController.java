@@ -69,5 +69,4 @@ public class UserGroupController extends ControllerBase{
         groupService.changeDescription(groupId,description);
         return ok("已更新描述信息！");
     }
-
 }

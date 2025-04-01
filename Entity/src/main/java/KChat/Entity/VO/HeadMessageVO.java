@@ -17,4 +17,5 @@ public class HeadMessageVO {
     private String contactAvatar;
     private Integer unReadCount = Constants.None;
     private Date time;
+    private String contactAccount;
 }

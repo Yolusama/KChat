@@ -282,4 +282,39 @@ public class ChatMessageService implements IChatMessageService {
             msgProducer.produceAndSend(record);
         }
     }
+
+    @Override
+    @Transactional
+    public void toSendMessage(String userId, String contactId) {
+        LambdaQueryWrapper<HeadMessage> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(HeadMessage::getUserId,userId).eq(HeadMessage::getContactId,contactId);
+
+        HeadMessage message = headMapper.selectOne(wrapper);
+
+        if(message == null){
+            message = new HeadMessage();
+            message.setUserId(userId);
+            message.setContactId(contactId);
+            message.setTime(Constants.now());
+            headMapper.insert(message);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void removeMessages(String userId, String contactId) {
+        if(contactId.indexOf(Constants.GroupIdPrefix)>=0){
+            LambdaQueryWrapper<GroupMessageRecord> wrapper =new LambdaQueryWrapper<>();
+            wrapper.eq(GroupMessageRecord::getUserId,userId).eq(GroupMessageRecord::getGroupId,contactId);
+            groupMessageRecordMapper.delete(wrapper);
+        }
+        else{
+            LambdaQueryWrapper<MessageRecord> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(MessageRecord::getUserId,userId).eq(MessageRecord::getContactId,contactId);
+            recordMapper.delete(wrapper);
+        }
+        LambdaQueryWrapper<HeadMessage> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(HeadMessage::getUserId,userId).eq(HeadMessage::getContactId,contactId);
+        headMapper.delete(wrapper);
+    }
 }

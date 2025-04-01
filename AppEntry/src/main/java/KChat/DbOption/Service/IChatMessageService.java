@@ -16,6 +16,7 @@ import java.util.List;
 public interface IChatMessageService {
     Long createHeadMessage(HeadMessageModel model);
     Long freshHeadMessage(HeadMessageModel model);
+    void toSendMessage(String userId,String contactId);
     List<HeadMessageVO> getHeadMessages(String userId);
     PagedData<ChatMessageVO> getChatMessages(Integer page,Integer pageSize,String userId,String contactId,
                                              FileService fileService);
@@ -23,4 +24,5 @@ public interface IChatMessageService {
     void createOfflineMessage(ChatMessageModel model);
     String uploadFile (String suffix, MultipartFile file, FileService fileService);
     void updateFilePath(MessageRecordModel model,MQMsgProducer msgProducer);
+    void removeMessages(String userId,String contactId);
 }

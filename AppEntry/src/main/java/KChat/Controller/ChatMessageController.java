@@ -88,8 +88,21 @@ public class ChatMessageController extends ControllerBase{
     }
 
     @PatchMapping("/UpdateFilePath")
-    public ActionResult UpdateFilePath(@RequestBody MessageRecordModel model){
-        chatMessageService.updateFilePath(model,msgProducer);
+    public ActionResult UpdateFilePath(@RequestBody MessageRecordModel model) {
+        chatMessageService.updateFilePath(model, msgProducer);
         return ok();
+    }
+
+
+    @PutMapping("/ToSendMessage/{userId}/{contactId}")
+    public ActionResult ToSendMessage(@PathVariable String userId,@PathVariable String contactId){
+        chatMessageService.toSendMessage(userId,contactId);
+        return ok();
+    }
+
+    @DeleteMapping("/RemoveMessages/{userId}/{contactId}")
+    public ActionResult RemoveMessages(@PathVariable String userId,@PathVariable String contactId){
+        chatMessageService.removeMessages(userId,contactId);
+        return ok("已移除！");
     }
 }
