@@ -64,3 +64,7 @@ export function ToSendMessage(userId:string,contactId:string,successCallback:(re
 export function RemoveMessages(userId:string,contactId:string,successCallback:(res:Result)=>void){
     api.delete(chatApiUrl(`/RemoveMessages/${userId}/${contactId}`),authorization(),successCallback);
 }
+
+export function RemoveMsgRecord(contactId:string,recordId:number,successCallback:(res:Result)=>void){
+    api.delete(chatApiUrl(`/RemoveMsgRecord/${contactId}/${recordId}`),authorization(),successCallback);
+}

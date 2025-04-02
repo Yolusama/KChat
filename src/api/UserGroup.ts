@@ -29,3 +29,7 @@ export function SearchGroup(userId:string,identifier:string,successCallback:(res
 export function ChangeDescription(groupId:string,description:string,successCallback:(res:Result)=>void){
     api.patch(groupApiUrl(`/ChangeDescription/${groupId}?description=${description}`),authorization(),{},successCallback);
 }
+
+export function QuitGroup(userId:string,groupId:string,successCallback:(res:Result)=>void){
+    api.delete(groupApiUrl(`/QuitGroup/${userId}/${groupId}`),authorization(),successCallback);
+}

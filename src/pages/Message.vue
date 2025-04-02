@@ -4,8 +4,7 @@
             <search-com @search="" @groupCreated="createdGroup"></search-com>
             <div class="head-message" v-for="(message, index) in state.headMessages" :key="index"
                 @click.left="getMessages(message)" :style="currentHeadMessage != null && currentHeadMessage.id == message.id ?
-                    'background-color:rgb(0,155,245);' : ''"
-                    @click.right="openHeadMsgMenu($event,headMessage)">
+                    'background-color:rgb(0,155,245);' : ''" @click.right="openHeadMsgMenu($event, message)">
                 <img :src="imgSrc(message.contactAvatar)" class="avatar">
                 <div class="info">
                     <div class="between">
@@ -32,12 +31,13 @@
                     {{ currentHeadMessage.contactName }}
                 </contact-profile>
             </div>
-            <el-scrollbar style="height:60%;padding-right: 2%;" class="no-drag" ref="scroll">
+            <el-scrollbar style="height:60%;padding-right: 2%;" class="no-drag" ref="scroll" @scroll="loadMsgs">
                 <div class="message" v-for="message in msgPageOpt.data" :key="message.id">
                     <span class="time">{{ new Date(message.time).toLocaleString() }}</span>
                     <div class="content user" v-if="message.userId == state.user.id && !isGroupMsg(message.contactId)">
                         <div class="user-info right">
                             <div class="message-body" v-html="message.content"
+                                @click.right="openMsgMsgMenu($event, message)"
                                 v-if="message.type == MessageType.common">
                             </div>
                             <el-image class="msg-img" :src="imageMsgDisplay(message)"
@@ -67,7 +67,7 @@
                             </div>
                             <div v-if="message.type == MessageType.video" class="msg-video">
                                 <video :src="toPlay(message)" muted="true" class="video" controls
-                                    controlslist="nodownload" @loadeddata="scrollBottom"></video>
+                                    controlslist="nodownload"></video>
                                 <el-icon v-if="message.downloaded" :size="24" @click="seeFileInFolder(message)">
                                     <Folder />
                                 </el-icon>
@@ -115,11 +115,12 @@
                                 <span v-if="expire(message.time)" class="size">已过期</span>
                             </div>
                             <div class="message-body" v-html="message.content"
+                                @click.right="openMsgMsgMenu($event, message)"
                                 v-if="message.type == MessageType.common">
                             </div>
                             <div v-if="message.type == MessageType.video" class="msg-video">
                                 <video :src="message.downloaded ? toPlay(message) : fileSrc(message.fileName)" controls
-                                    muted="true" class="video" controlslist="nodownload" @loadeddata="scrollBottom">
+                                    muted="true" class="video" controlslist="nodownload">
                                 </video>
                                 <el-icon v-if="message.downloaded" :size="24" @click="seeFileInFolder(message)"
                                     color="white">
@@ -138,7 +139,9 @@
                         <div class="group-user-self">
                             <span class="nickname text-overflow">{{ state.user.nickname }}</span>
                             <div class="message-body" v-html="message.content"
-                                v-if="message.type == MessageType.common"></div>
+                                @click.right="openMsgMsgMenu($event, message)"
+                                v-if="message.type == MessageType.common">
+                            </div>
                             <el-image class="msg-img" :src="imageMsgDisplay(message)"
                                 :preview-src-list="[imageMsgDisplay(message)]" v-if="message.type == MessageType.image"
                                 fit="fill">
@@ -152,7 +155,7 @@
                             </el-image>
                             <div v-if="message.type == MessageType.video" class="msg-video">
                                 <video :src="toPlay(message)" controls muted="true" class="video"
-                                    controlslist="nodownload" @loadeddata="scrollBottom"> </video>
+                                    controlslist="nodownload"> </video>
                                 <el-icon v-if="message.downloaded" :size="24" @click="seeFileInFolder(message)">
                                     <Folder />
                                 </el-icon>
@@ -185,6 +188,7 @@
                         <div class="group-contactor-self">
                             <span class="nickname text-overflow">{{ message.contactName }}</span>
                             <div class="message-body" v-html="message.content"
+                                @click.right="openMsgMsgMenu($event, message)"
                                 v-if="message.type == MessageType.common">
                             </div>
                             <el-image class="msg-img" :src="imageMsgDisplay(message)"
@@ -200,7 +204,7 @@
                             </el-image>
                             <div v-if="message.type == MessageType.video" class="msg-video">
                                 <video :src="message.downloaded ? toPlay(message) : fileSrc(message.fileName)" controls
-                                    muted="true" class="video" controlslist="nodownload" @loadeddata="scrollBottom">
+                                    muted="true" class="video" controlslist="nodownload">
                                 </video>
                                 <el-icon v-if="message.downloaded" :size="24" @click="seeFileInFolder(message)"
                                     color="white">
@@ -264,32 +268,43 @@
                     <input type="file" style="display:none" id="pic" @change="chooseImage" accept="image/*">
                 </div>
                 <textarea v-model="state.content" class="input" style="" @keydown="keyToSend">
-                </textarea>
+    </textarea>
                 <el-tooltip effect="dark" content="按住ctrl+空格快捷发送" placement="top">
                     <el-button type="primary" class="send" @click="send">发送</el-button>
                 </el-tooltip>
             </div>
         </div>
-        <div class="head-menu no-drag" v-show="headMenu.show" :style="headMenu.style()"
-         @mouseleave.stop="headMenu.show=false;">
-           <div @click.stop="copyAccount" class="func">复制账号</div>
+        <div class="head-menu no-drag" v-if="headMenu.show" :style="headMenu.style()"
+            @mouseleave.stop="headMenu.show = false;">
+            <div @click.stop="copyAccountOrGroupId" class="func">{{ isGroupMsg(headMenu.message.contactId) ?
+                "复制群id" : "复制账号" }}
+            </div>
             <div @click.stop="removeMessages" class="func">移除消息</div>
-            <div @click.stop ="" class="func">拉黑TA</div>
-            <div @click.stop="" class="func">删除好友</div>
+            <div @click.stop="setUserContactStatus(UserContactStatus.Block)" class="func"
+                v-if="!isGroupMsg(headMenu.message.contactId)">拉黑TA</div>
+            <div @click.stop="setUserContactStatus(UserContactStatus.Remove)" class="func"
+                v-if="!isGroupMsg(headMenu.message.contactId)">删除好友</div>
+            <div class="func" @click.stop="quitGroup" v-if="isGroupMsg(headMenu.message.contactId)">退出群聊</div>
         </div>
-        <div class="msg-menu no-drag" v-show="msgMenu.show" :style="msgMenu.style()" @blur="msgMenu.show=false"></div>
+        <div class="msg-menu no-drag" v-if="msgMenu.show" :style="msgMenu.style(false)"
+            @mouseout.stop="msgMenu.show = false">
+            <div class="func" @click.stop="copyMsgContent">复制消息内容</div>
+            <div class="func" @click.stop="removeMsg">删除消息</div>
+        </div>
     </div>
 </template>
 
 <script lang="ts" setup>
 import { reactive, onMounted, ref, onBeforeUnmount } from 'vue';
 import webSocket from '../modules/WebSocket';
-import { copy, CurrentHeadMessage, delayToRun, getFileSize, getFileSuffix, MessageType, onlyDate, PageOption, playNotifyAudio, StylePos, timeWithoutSeconds } from '../modules/Common';
-import { CreateMessage, FreshHeadMessage, GetCacheFile, GetHeadMessages, GetMessages, RemoveMessages, UpdateFilePath, UploadFile } from '../api/ChatMessage';
+import { confirmDialog, copy, CurrentHeadMessage, delayToRun, getFileSize, getFileSuffix, MessageType, onlyDate, PageOption, playNotifyAudio, StylePos, timeWithoutSeconds, UserContactStatus } from '../modules/Common';
+import { CreateMessage, FreshHeadMessage, GetCacheFile, GetHeadMessages, GetMessages, RemoveMessages, RemoveMsgRecord, UpdateFilePath, UploadFile } from '../api/ChatMessage';
 import stateStroge from '../modules/StateStorage';
 import { fileSrc, imgSrc } from '../modules/Request';
 import { ipcRenderer } from 'electron';
 import { ElMessage } from 'element-plus';
+import { GetUserContactStatus, SetUserContactStatus } from '../api/User';
+import { QuitGroup } from '../api/UserGroup';
 
 const state = reactive<any>({
     headMessages: [],
@@ -324,6 +339,20 @@ const msgPageOpt = ref<PageOption>(new PageOption(1, 15, []));
 
 function messageHandle(event: MessageEvent<any>) {
     const msg = JSON.parse(event.data);
+
+    if (isGroupMsg(msg.contactId))
+        handleMessage(msg);
+    else {
+        GetUserContactStatus(msg.userId, msg.contactId, res => {
+            const status = res.data;
+            if (status == UserContactStatus.Blocked || status == UserContactStatus.Removed)
+                return;
+            handleMessage(msg);
+        });
+    }
+}
+
+function handleMessage(msg: any) {
     if (currentHeadMessage.value != null && (currentHeadMessage.value.contactId == msg.userId ||
         currentHeadMessage.value.contactId == msg.contactId)) {
         const { contactName, contactAvatar } = currentHeadMessage.value;
@@ -621,30 +650,113 @@ function scrollBottom() {
     }, 50);
 }
 
-function openHeadMsgMenu(e:any,headMessage:any){
-   headMenu.value.show = true; 
-   headMenu.value.x = e.offsetX;
-   headMenu.value.y = e.offsetY;
-   headMenu.value.headMessage = headMessage;
+function openHeadMsgMenu(e: any, headMessage: any) {
+    headMenu.value.show = true;
+    headMenu.value.x = e.offsetX;
+    headMenu.value.y = e.offsetY;
+    headMenu.value.message = headMessage;
 }
 
-function copyAccount(){
-    navigator.clipboard.write(headMenu.value.headMessage.contactAccount);
+function openMsgMsgMenu(e: any, message: any) {
+    msgMenu.value.show = true;
+    msgMenu.value.x = e.x;
+    msgMenu.value.y = e.y;
+    msgMenu.value.message = message;
 }
 
-function removeMessages(){
-    const contactId = headMenu.value.headMessage.contactId;
-    RemoveMessages(state.user.id,contactId,()=>{
-        const index = state.headMessages.findIndex((h:any)=>h.contactId==contactId);
-        if(index<0){
-            ElMessage({
-                message:"发生了一个错误！",
-                type:"error"
-            });
-        }
-        else
-           state.headMessages.splice(index,1);
+function copyAccountOrGroupId() {
+    const content = isGroupMsg(headMenu.value.message.contactId) ? headMenu.value.message.contactId
+        : headMenu.value.message.contactAccount
+    navigator.clipboard.writeText(content);
+    headMenu.value.show = false;
+}
+
+function removeMessages() {
+    const contactId = headMenu.value.message.contactId;
+    RemoveMessages(state.user.id, contactId, () => {
+        headMenuMsgRemove(contactId);
+        headMenu.value.show = false;
     });
+}
+
+function setUserContactStatus(status: number) {
+    const contactId = headMenu.value.message.contactId;
+    let title, content;
+    title = content = "";
+    if (status == UserContactStatus.Block) {
+        title = "拉黑好友";
+        content = "好友将被你拉黑，你将不会收到来自他的消息";
+    }
+    if (status == UserContactStatus.Remove) {
+        title = "删除好友";
+        content = "好友将会在你的好友列表中移除"
+    }
+    confirmDialog(title, content, "确定", "取消", () => {
+        SetUserContactStatus(state.user.id, contactId, status, () => {
+            headMenuMsgRemove(contactId);
+            headMenu.value.show = false;
+        });
+    });
+
+}
+
+function quitGroup() {
+    const contactId = headMenu.value.message.contactId;
+
+    confirmDialog("退出群聊", `你正在退出群${contactId}...`, "确定", "取消", () => {
+        QuitGroup(state.user.id, contactId, () => {
+            headMenuMsgRemove(contactId);
+            headMenu.value.show = false;
+        });
+    });
+}
+
+function copyMsgContent() {
+    navigator.clipboard.writeText(msgMenu.value.message.content);
+}
+
+function removeMsg() {
+    const recordId = msgMenu.value.message.recordId;
+    const groupId = msgMenu.value.message.contactId;
+    const messageId = msgMenu.value.message.messageId;
+
+    confirmDialog("删除消息", "删除消息后该记录不会出现你的聊天记录里", "确定", "取消", () => {
+        RemoveMsgRecord(groupId, recordId, () => {
+            const index = msgPageOpt.value.data.findIndex((m: any) => m.messageId == messageId);
+            if (index < 0) {
+                ElMessage({
+                    message: "发生了一个错误！",
+                    type: "error"
+                });
+            }
+            else
+                state.messages.splice(index, 1);
+        });
+    });
+}
+
+function headMenuMsgRemove(contactId: string) {
+    const index = state.headMessages.findIndex((h: any) => h.contactId == contactId);
+    if (index < 0) {
+        ElMessage({
+            message: "发生了一个错误！",
+            type: "error"
+        });
+    }
+    else
+        state.headMessages.splice(index, 1);
+}
+
+function loadMsgs(e: any) {
+    const top = e.scrollTop;
+    if (top == 0 && msgPageOpt.value.data.length > msgPageOpt.value.current * msgPageOpt.value.size) {
+        msgPageOpt.value.current++;
+
+        GetMessages(msgPageOpt.value.current, msgPageOpt.value.size, state.user.id, currentHeadMessage.value.contactId, res => {
+            const toAdd = res.data.data;
+            msgPageOpt.value.data.splice(0, 0, ...toAdd);
+        });
+    }
 }
 
 onBeforeUnmount(() => {
@@ -669,6 +781,10 @@ onBeforeUnmount(() => {
     background-color: aliceblue;
     height: 100vh;
     -webkit-app-region: no-drag;
+}
+
+#message .messages {
+    position: relative;
 }
 
 #message .messages .head {
@@ -1015,19 +1131,21 @@ onBeforeUnmount(() => {
     margin-right: 1%;
 }
 
-.head-menu,.msg-menu{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: absolute;
-  width: 120px;
-  z-index:12;
-  background-color: rgb(96%,97%,98%);
-  font-size: 13px;
-  border-radius: 6px;
+.head-menu,
+.msg-menu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: absolute;
+    width: 120px;
+    z-index: 12;
+    background-color: rgb(96%, 97%, 98%);
+    font-size: 13px;
+    border-radius: 6px;
 }
 
-.head-menu .func,.msg-menu .func{
+.head-menu .func,
+.msg-menu .func {
     display: flex;
     height: 25px;
     align-items: center;
@@ -1037,8 +1155,8 @@ onBeforeUnmount(() => {
     justify-content: center;
 }
 
-.head-menu .func:hover,.msg-menu .func:hover{
-    background-color: rgb(12,13,15,.35);
+.head-menu .func:hover,
+.msg-menu .func:hover {
+    background-color: rgb(12, 13, 15, .35);
 }
-
 </style>

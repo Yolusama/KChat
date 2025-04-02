@@ -78,7 +78,7 @@ body{
   color: gray;
 }
 
-.el-image-viewer__canvas,.el-dropdown-menu{
+.el-image-viewer__canvas,.el-dropdown-menu,.el-message-box{
   -webkit-app-region:no-drag;
 }
 

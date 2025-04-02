@@ -60,3 +60,12 @@ export function GoOffline(userId:string,successCallback:(res:Result)=>void){
 export function GetUserInfo(userId:string,contactId:string,successCallback:(res:Result)=>void){
     api.get(userApiUrl(`/GetUserInfo/${userId}?identifier=${contactId}`),authorization(),successCallback);
 }
+
+export function SetUserContactStatus(userId:string,contactId:string,status:number,successCallback:(res:Result)=>void){
+    const model = {userId,contactId,status};
+    api.post(userApiUrl("/SetUserContactStatus"),authorization(),model,successCallback);
+}
+
+export function GetUserContactStatus(userId:string,contactId:string,successCallback:(res:Result)=>void){
+    api.get(userApiUrl(`/GetUserContactStatus/${userId}/${contactId}`),authorization(),successCallback);
+}

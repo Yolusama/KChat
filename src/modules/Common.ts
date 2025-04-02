@@ -136,6 +136,10 @@ export enum GroupContactStatus {
     KickOut = 2, Dismissed = 3
 }
 
+export enum UserContactStatus{
+    Normal = 1,Block = 2,Remove = 3,Blocked = 4,Removed = 5
+}
+
 export const GroupSizes = [20, 50, 100, 200, 500, 1000, 1500, 2000];
 export const DefaultGroupAvatar = "default-group.jpg";
 
@@ -195,14 +199,15 @@ export class StylePos{
     x:number;
     y:number;
     show:boolean;
-    headMessage:any= {};
+    message:any= {};
 
     constructor(){
         this.x = this.y = 0;
         this.show = false;
     }
 
-    style(){
-        return `left:${this.x}px;top:${this.y}px;transform:translate(50%,50%)`;
+    style(right = true){
+        const dire = right? "" : "-";
+        return `left:${this.x}px;top:${this.y}px;transform:translate(${dire}50%,${dire}50%)`;
     }
 }
