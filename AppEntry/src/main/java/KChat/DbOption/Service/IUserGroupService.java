@@ -16,4 +16,5 @@ public interface IUserGroupService {
     String uploadAvatar(String groupId, String avatar, MultipartFile file, FileService fileService);
     GroupInfoVO searchGroup(String userId, String identifier);
     void changeDescription(String groupId,String description);
+    void quit(String userId,String groupId);
 }

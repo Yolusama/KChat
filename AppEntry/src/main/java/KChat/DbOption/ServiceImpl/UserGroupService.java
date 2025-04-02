@@ -141,4 +141,12 @@ public class UserGroupService implements IUserGroupService {
         wrapper.set(UserGroup::getDescription,description).eq(UserGroup::getId,groupId);
         groupMapper.update(wrapper);
     }
+
+    @Override
+    public void quit(String userId, String groupId) {
+        LambdaQueryWrapper<UserContact> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserContact::getUserId,userId).eq(UserContact::getContactId,groupId);
+        userContactMapper.delete(wrapper);
+        groupMapper.userQuit(groupId);
+    }
 }

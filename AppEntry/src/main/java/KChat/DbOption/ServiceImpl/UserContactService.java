@@ -106,4 +106,30 @@ public class UserContactService implements IUserContactService {
                 .set(UserContact::getRemark,remark);
         contactMapper.update(wrapper);
     }
+
+    @Override
+    @Transactional
+    public void setContactStatus(String userId, String contactId, Integer status) {
+        LambdaUpdateWrapper<UserContact> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(UserContact::getUserId,userId).eq(UserContact::getContactId,contactId)
+                .set(UserContact::getStatus,status);
+        contactMapper.update(wrapper);
+        wrapper.clear();
+        wrapper.eq(UserContact::getContactId,userId).eq(UserContact::getUserId,contactId);
+        if(status.equals(UserContactStatus.REMOVE.value()))
+        {
+            wrapper.set(UserContact::getStatus,UserContactStatus.REMOVED.value());
+            contactMapper.update(wrapper);
+        }
+        if(status.equals(UserContactStatus.BLOCK.value()))
+        {
+           wrapper.set(UserContact::getStatus,UserContactStatus.BLOCKED.value());
+           contactMapper.update(wrapper);
+        }
+    }
+
+    @Override
+    public Integer getContactStatus(String userId, String contactId) {
+        return contactMapper.getUserContactStatus(userId,contactId);
+    }
 }

@@ -25,4 +25,5 @@ public interface IChatMessageService {
     String uploadFile (String suffix, MultipartFile file, FileService fileService);
     void updateFilePath(MessageRecordModel model,MQMsgProducer msgProducer);
     void removeMessages(String userId,String contactId);
+    void removeMsgRecord(Long recordId,String contactId);
 }

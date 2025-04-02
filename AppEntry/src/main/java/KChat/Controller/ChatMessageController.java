@@ -105,4 +105,10 @@ public class ChatMessageController extends ControllerBase{
         chatMessageService.removeMessages(userId,contactId);
         return ok("已移除！");
     }
+
+    @DeleteMapping("/RemoveMsgRecord/{contactId}/{recordId}")
+    public ActionResult RemoveMsgRecord(@PathVariable String contactId,@PathVariable Long recordId){
+        chatMessageService.removeMsgRecord(recordId,contactId);
+        return ok("已移除消息记录！");
+    }
 }

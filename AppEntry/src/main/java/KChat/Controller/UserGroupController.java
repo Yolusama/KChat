@@ -69,4 +69,11 @@ public class UserGroupController extends ControllerBase{
         groupService.changeDescription(groupId,description);
         return ok("已更新描述信息！");
     }
+
+    @DeleteMapping("/QuitGroup/{userId}/{groupId}")
+    @ClearRedisCache(keys = {CachingKeys.GetUserGroups,CachingKeys.GetUserGroupIds})
+    public ActionResult QuitGroup(@PathVariable String userId,@PathVariable String groupId){
+        groupService.quit(userId,groupId);
+        return ok("已退出群聊！");
+   }
 }

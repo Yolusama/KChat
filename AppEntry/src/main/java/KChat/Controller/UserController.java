@@ -7,15 +7,13 @@ import KChat.DbOption.Service.IUserContactService;
 import KChat.DbOption.Service.IUserService;
 import KChat.DbOption.ServiceImpl.UserContactService;
 import KChat.DbOption.ServiceImpl.UserService;
+import KChat.Entity.Enum.UserContactStatus;
 import KChat.Entity.Enum.UserLoginStatus;
 import KChat.Entity.VO.ContactLabelVO;
 import KChat.Entity.VO.UserInfoVO;
 import KChat.Entity.VO.UserLoginVO;
 import KChat.Entity.VO.UserVO;
-import KChat.Model.UserContactModel;
-import KChat.Model.UserLoginModel;
-import KChat.Model.UserRegModel;
-import KChat.Model.UserTokenModel;
+import KChat.Model.*;
 import KChat.Result.ActionResult;
 import KChat.Service.EmailService;
 import KChat.Service.JwtService;
@@ -151,6 +149,21 @@ public class UserController extends ControllerBase{
         if(res == Constants.AbnormalState)
             return fail();
         return ok("已下线!");
+    }
+
+    @PostMapping("/SetUserContactStatus")
+    public ActionResult SetUserContactStatus(@RequestBody ContactStatusModel model){
+        userContactService.setContactStatus(model.getUserId(),model.getContactId(),model.getStatus());
+        if(model.getStatus().equals(UserContactStatus.BLOCK.value()))
+            return ok("已拉黑对方！");
+        if(model.getStatus().equals(UserContactStatus.REMOVE.value()))
+            return ok("已删除好友！");
+        return ok();
+    }
+
+    @GetMapping("/GetUserContactStatus/{userId}/{contactId}")
+    public ActionResult<Integer> GetUserContactStatus(@PathVariable String userId,@PathVariable String contactId){
+        return successWithData(userContactService.getContactStatus(userId,contactId));
     }
 
     @RequestMapping("/TestRegister")

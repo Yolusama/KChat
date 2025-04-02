@@ -305,16 +305,29 @@ public class ChatMessageService implements IChatMessageService {
     public void removeMessages(String userId, String contactId) {
         if(contactId.indexOf(Constants.GroupIdPrefix)>=0){
             LambdaQueryWrapper<GroupMessageRecord> wrapper =new LambdaQueryWrapper<>();
-            wrapper.eq(GroupMessageRecord::getUserId,userId).eq(GroupMessageRecord::getGroupId,contactId);
+            wrapper.eq(GroupMessageRecord::getGroupId,contactId)
+                    .eq(GroupMessageRecord::getMemberId,userId);
             groupMessageRecordMapper.delete(wrapper);
         }
         else{
             LambdaQueryWrapper<MessageRecord> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(MessageRecord::getUserId,userId).eq(MessageRecord::getContactId,contactId);
+            wrapper.and(q->q.eq(MessageRecord::getUserId,userId).eq(MessageRecord::getContactId,contactId)
+                    .eq(MessageRecord::getUserSent,true)).or(q->q.eq(MessageRecord::getUserId,contactId).
+                    eq(MessageRecord::getContactId,userId).eq(MessageRecord::getUserSent,false));
             recordMapper.delete(wrapper);
         }
         LambdaQueryWrapper<HeadMessage> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(HeadMessage::getUserId,userId).eq(HeadMessage::getContactId,contactId);
         headMapper.delete(wrapper);
+    }
+
+    @Override
+    @Transactional
+    public void removeMsgRecord(Long recordId, String contactId) {
+        boolean isGroup = contactId.indexOf(Constants.GroupIdPrefix) >= Constants.None;
+        if(isGroup)
+            groupMessageRecordMapper.deleteById(recordId);
+        else
+            recordMapper.deleteById(recordId);
     }
 }

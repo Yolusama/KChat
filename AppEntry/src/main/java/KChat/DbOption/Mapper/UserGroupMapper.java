@@ -23,6 +23,8 @@ public interface UserGroupMapper extends BaseMapper<UserGroup> {
     List<String> getUserGroupIds(@Param("userId")String userId);
     @Update("update UserGroup set currentCount = currentCount+1 where id = #{groupId}")
     void userJoined(@Param("groupId")String groupId);
+    @Update("update UserGroup set currentCount = currentCount-1 where id = #{groupId}")
+    void userQuit(@Param("groupId")String groupId);
     @Update("update UserGroup set ${ew.sqlSet} ${ew.customSqlSegment}")
     int update(@Param(Constants.WRAPPER) Wrapper<UserGroup> wrapper);
 }

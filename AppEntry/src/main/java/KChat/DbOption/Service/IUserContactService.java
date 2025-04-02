@@ -15,4 +15,6 @@ public interface IUserContactService {
     List<ContactLabelVO> getUserLabels(String userId,RedisCache redis);
     ContactLabelVO createLabel(String userId,String labelName);
     void changeRemark(String userId,String contactId,String remark);
+    void setContactStatus(String userId,String contactId,Integer status);
+    Integer getContactStatus(String userId,String contactId);
 }

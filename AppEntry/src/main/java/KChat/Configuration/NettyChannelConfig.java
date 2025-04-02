@@ -1,6 +1,7 @@
 package KChat.Configuration;
 
 import KChat.Common.Constants;
+import KChat.DbOption.Service.IUserContactService;
 import KChat.DbOption.Service.IUserGroupService;
 import KChat.DbOption.ServiceImpl.UserGroupService;
 import KChat.Model.SentChatMessageModel;
