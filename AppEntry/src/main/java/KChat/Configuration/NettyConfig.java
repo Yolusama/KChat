@@ -1,5 +1,6 @@
 package KChat.Configuration;
 
+import KChat.Common.Constants;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -10,11 +11,14 @@ import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.concurrent.TimeUnit;
 
 @Configuration
 @ConfigurationProperties(prefix = "netty")
@@ -26,7 +30,7 @@ public class NettyConfig {
     private Integer maxContentLength;
     private Long handshakeTimeOut;
 
-    public void channelInit(SimpleChannelInboundHandler<WebSocketFrame> webSocketHandler){
+    public void channelInit(SimpleChannelInboundHandler<WebSocketFrame> webSocketHandler,ChannelInboundHandlerAdapter adapter){
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
@@ -47,6 +51,8 @@ public class NettyConfig {
                             pipeline.addLast(new WebSocketServerProtocolHandler(path,null,
                                     true,maxContentLength,true,true,handshakeTimeOut));
                             // 自定义WebSocket消息处理器
+                            pipeline.addLast(new IdleStateHandler(Constants.HeartbeatTimeout,0, 0, TimeUnit.SECONDS));
+                            pipeline.addLast(adapter);
                             pipeline.addLast(webSocketHandler);
                         }
                     })

@@ -17,6 +17,7 @@ public final class Constants {
     public static final int NormalState = 1;
     public static final int AbnormalState = 0;
     public static final int None = 0;
+    public static final int HeartbeatTimeout = 60;
     public static final char GroupIdPrefix = 'G';
 
     public static final Duration TokenExpire = Duration.ofDays(30);

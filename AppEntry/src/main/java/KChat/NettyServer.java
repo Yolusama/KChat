@@ -1,8 +1,10 @@
 package KChat;
 
 import KChat.Common.Constants;
+import KChat.Configuration.NettyChannelConfig;
 import KChat.Configuration.NettyConfig;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
@@ -10,6 +12,7 @@ import io.netty.util.AttributeKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -23,13 +26,17 @@ public final class NettyServer {
     private final SimpleChannelInboundHandler<WebSocketFrame> handler;
     private final NettyConfig nettyConfig;
 
+    @Resource(type = NettyChannelConfig.HeartbeatFrameHandler.class)
+    private ChannelInboundHandlerAdapter adapter;
+
     @Autowired
-    public NettyServer(SimpleChannelInboundHandler<WebSocketFrame>handler, NettyConfig nettyConfig){
+    public NettyServer(SimpleChannelInboundHandler<WebSocketFrame>handler,
+                       NettyConfig nettyConfig){
         this.handler = handler;
         this.nettyConfig = nettyConfig;
     }
 
     public void initAndRun(){
-        nettyConfig.channelInit(handler);
+        nettyConfig.channelInit(handler,adapter);
     }
 }
