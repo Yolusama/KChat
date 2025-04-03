@@ -10,7 +10,7 @@ const defaultErrorCallback = () => {
 }
 
 const defaultCloseCallback = () => {
-    console.log("WebSocket关闭中...");
+    console.log("WebSocket已关闭...");
 }
 
 const defaultOpenCallback = () => {
@@ -21,6 +21,13 @@ class KWebSocket {
     private socket: any = null;
     private closeCallback: (event: CloseEvent) => void = defaultCloseCallback;
     private user: any = null;
+    private timeout = 10 * 1000;
+    private interval = 30 * 1000;
+    private heartbeatTimer: any = 0;
+    private reconnectTimer: any = 0;
+    private heartbeatTimeout: any = 0;
+    private maxTrial = 3;
+    private shouldRetry = false;
 
     constructor() {
 
@@ -34,13 +41,35 @@ class KWebSocket {
             };
         }
         const socket = new WebSocket(`${webSocketUrl}?userId=${userId}&token=${token}`);
-        socket.onopen = defaultOpenCallback;
+        socket.onopen = () => {
+            defaultOpenCallback();
+            clearInterval(this.reconnectTimer);
+            this.shouldRetry = false;
+            this.heartbeatCheck();
+        }
         socket.onclose = (event) => {
-            this.closeCallback(event);
-            socket.onopen = null;
-            socket.onmessage = null;
-            socket.onerror = null;
-            socket.onclose = null;
+            if(!this.shouldRetry){
+                this.closeCallback(event);
+                return;
+            }
+            let i = 1;
+            const expire = 5000;
+            this.reconnectTimer = setInterval(() => {
+                if(this.socket.readyState==this.socket.OPEN){
+                    i=1;
+                    clearInterval(this.reconnectTimer);
+                    return;
+                }
+                if (i > this.maxTrial) {
+                    console.log("重新连接次数超过最大重新次数，将放弃继续重新连接");
+                    this.closeCallback(event);
+                    clearInterval(this.reconnectTimer);
+                }
+                else {
+                    this.reconnect();
+                    console.log(`尝试重新连接，第${i++}次尝试...`);
+                }
+            }, expire);
         };
         socket.onerror = defaultErrorCallback;
         this.socket = socket;
@@ -59,7 +88,17 @@ class KWebSocket {
     }
 
     assignMessageCallback(callback: (event: MessageEvent<any>) => void) {
-        this.socket.onmessage = callback;
+        this.socket.onmessage = (event: MessageEvent<any>) => {
+            const msg = JSON.parse(event.data);
+            if (msg.isResponse != undefined) {
+                console.log("收到心跳...");
+                clearTimeout(this.heartbeatTimeout);
+                this.heartbeatCheck();
+            }
+            else {
+                callback(event);
+            }
+        }
     }
 
     sendMessage(message: any, callback: () => void) {
@@ -73,13 +112,35 @@ class KWebSocket {
     }
 
     close() {
+        clearInterval(this.heartbeatTimer);
+        clearTimeout(this.heartbeatTimeout);
+        clearInterval(this.reconnectTimer);
         if (this.socket.readyState == this.socket.OPEN || this.socket.readyState == this.socket.CONNECTING)
             this.socket.close();
     }
 
     reconnect() {
-        this.close();
-        delayToRun(() => this.assign(this.user.id, this.user.token), 15);
+        const socket = new WebSocket(`${webSocketUrl}?userId=${this.user.id}&token=${this.user.token}`);
+        socket.onopen = this.socket.onopen;
+        socket.onmessage = this.socket.onmessage;
+        socket.onclose = this.socket.onclose;
+        socket.onerror = this.socket.onerror;
+        this.socket = socket;
+    }
+
+    private heartbeatCheck() {
+        clearInterval(this.heartbeatTimer);
+        clearInterval(this.reconnectTimer);
+        clearTimeout(this.heartbeatTimeout);
+
+        this.heartbeatTimer = setInterval(() => {
+            this.heartbeatTimeout = setTimeout(() => {
+                console.log("心跳超时！");
+                this.close();
+                this.shouldRetry = true;
+            }, this.timeout);
+            this.sendMessage({ userId: this.user.id, isResponse: false }, () => { });
+        }, this.interval);
     }
 }
 
